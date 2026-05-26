@@ -133,7 +133,7 @@ function TitleScreen({ onStart }) {
       <Text style={styles.titleBig}>AWF</Text>
       <Text style={styles.titleSub}>WRESTLING{'\n'}PROMOS</Text>
       <View style={{ height: 24 }} />
-      <Text style={styles.muted}>v0.1</Text>
+      <Text style={styles.muted}>v1</Text>
       <View style={{ height: 40 }} />
       <Btn onPress={onStart} label="▶ PRESS START" wide />
     </View>
