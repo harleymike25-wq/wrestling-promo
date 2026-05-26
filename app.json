@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "AWF Wrestling Promos",
+    "slug": "awf-wrestling-promos",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "jsEngine": "jsc",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.awf.wrestlingpromos",
+      "jsEngine": "jsc"
+    },
+    "android": {
+      "package": "com.awf.wrestlingpromos"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "plugins": [
+      "expo-asset"
+    ]
+  }
+}
