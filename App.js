@@ -11,6 +11,7 @@ import {
   legacyToBeats, getChapterRecap
 } from './src/story';
 import { getSceneImage } from './src/sceneImages';
+import { OPPONENTS, playExchanges, resolveClimax, climaxPreview, MID_MATCH_OPTIONS } from './src/opponents';
 import { THEMES, THEME_ORDER, configureAudio, playTheme, previewTheme, stopTheme, toggleMute, isMuted } from './src/audio';
 import {
   VICE, SCREENS, ALIGNMENTS, FORMATS,
@@ -64,6 +65,23 @@ export default function App() {
   // GameScreen calls these. Choice → state update. Scene-done → advance index.
   const handleChoice = (idx) => setGame(applyChoice(game, idx));
 
+  const handleMatchEnd = ({ won }) => {
+    const total = getTotalScenes(game.character);
+    const nextIndex = game.sceneIndex + 1;
+    const next = {
+      ...game,
+      flags: { ...game.flags, lastMatchWon: won }
+    };
+    if (nextIndex >= total) {
+      stopTheme();
+      setEnding(getEnding(next));
+      setGame(next);
+      setScreen(SCREENS.ENDING);
+      return;
+    }
+    setGame({ ...next, sceneIndex: nextIndex });
+  };
+
   const advanceScene = () => {
     const nextIndex = game.sceneIndex + 1;
     if (nextIndex >= getTotalScenes(game.character)) {
@@ -88,7 +106,7 @@ export default function App() {
     case SCREENS.TITLE:     body = <TitleScreen onStart={() => go(SCREENS.RING_NAME)} />; break;
     case SCREENS.RING_NAME: body = <RingNameScreen draft={draft} setDraft={setDraft} onNext={() => go(SCREENS.MUSIC)} onBack={() => go(SCREENS.TITLE)} />; break;
     case SCREENS.MUSIC:     body = <MusicScreen draft={draft} setDraft={setDraft} onNext={beginGame} onBack={() => go(SCREENS.RING_NAME)} />; break;
-    case SCREENS.GAME:      body = <GameScreen game={game} onChoice={handleChoice} onAdvance={advanceScene} />; break;
+    case SCREENS.GAME:      body = <GameScreen game={game} onChoice={handleChoice} onAdvance={advanceScene} onMatchEnd={handleMatchEnd} />; break;
     case SCREENS.ENDING:    body = <EndingScreen ending={ending} game={game} onRestart={resetAll} />; break;
     default: body = null;
   }
@@ -304,8 +322,27 @@ function ChoiceMenu({ choices, onSelect }) {
       {choices.map((c, i) => (
         <Pressable key={i} onPress={() => onSelect(i)} style={styles.choiceMenuItem}>
           <Text style={styles.choiceCursor}>▶</Text>
-          <Text style={styles.choiceMenuText}>{c.text}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.choiceMenuText}>{c.text}</Text>
+            <ChoiceEffects effects={c.effects} />
+          </View>
         </Pressable>
+      ))}
+    </View>
+  );
+}
+
+function ChoiceEffects({ effects }) {
+  if (!effects) return null;
+  const chips = Object.entries(effects).filter(([, v]) => v);
+  if (!chips.length) return null;
+  const colorFor = (k) => k === 'pop' ? VICE.cyan : k === 'heat' ? VICE.border : VICE.yellow;
+  return (
+    <View style={styles.effectsRow}>
+      {chips.map(([k, v]) => (
+        <Text key={k} style={[styles.effectChip, { color: colorFor(k), borderColor: colorFor(k) }]}>
+          {k.toUpperCase()} {v > 0 ? '+' : ''}{v}
+        </Text>
       ))}
     </View>
   );
@@ -317,19 +354,54 @@ function MiniHud({ game }) {
     const next = await toggleMute();
     setMute(next);
   };
+  // Project the player's current ending track from live stats.
+  const objective = projectObjective(game);
   return (
-    <View style={styles.miniHud}>
-      <Text style={styles.miniHudName}>{game.ringName}</Text>
-      <View style={styles.miniHudStats}>
-        <MiniStat label="POP"  value={game.pop}  color={VICE.cyan} />
-        <MiniStat label="HEAT" value={game.heat} color={VICE.border} />
-        <MiniStat label="PUSH" value={game.push} color={VICE.yellow} />
+    <View>
+      <View style={styles.miniHud}>
+        <Text style={styles.miniHudName}>{game.ringName}</Text>
+        <View style={styles.miniHudStats}>
+          <MiniStat label="POP"  value={game.pop}  color={VICE.cyan} />
+          <MiniStat label="HEAT" value={game.heat} color={VICE.border} />
+          <MiniStat label="PUSH" value={game.push} color={VICE.yellow} />
+        </View>
+        <Pressable onPress={handleMute} style={styles.muteBtn} hitSlop={8}>
+          <Text style={styles.muteBtnText}>{mute ? '♪̸' : '♪'}</Text>
+        </Pressable>
       </View>
-      <Pressable onPress={handleMute} style={styles.muteBtn} hitSlop={8}>
-        <Text style={styles.muteBtnText}>{mute ? '♪̸' : '♪'}</Text>
-      </Pressable>
+      <View style={styles.objectiveBar}>
+        <Text style={styles.objectiveLabel}>TONIGHT</Text>
+        <Text style={[styles.objectiveText, { color: objective.color }]}>{objective.label}</Text>
+        <Text style={styles.objectiveHint}>{objective.hint}</Text>
+      </View>
     </View>
   );
+}
+
+function projectObjective(game) {
+  const { pop, heat, push } = game;
+  // Locked endings — already qualified
+  if (pop >= 65) {
+    return { label: '★ LEGEND LOCKED', color: VICE.yellow, hint: 'Win the championship match.' };
+  }
+  if (heat >= 65) {
+    return { label: '★ CHAMP LOCKED', color: VICE.border, hint: 'Win the championship match.' };
+  }
+  if (push >= 65 && pop < 65 && heat < 65) {
+    return { label: '★ WORKHORSE LOCKED', color: VICE.yellow, hint: 'The booker\'s most reliable hand.' };
+  }
+  // Closest track
+  const popGap  = 65 - pop;
+  const heatGap = 65 - heat;
+  const pushGap = 65 - push;
+  const closest = Math.min(popGap, heatGap, pushGap);
+  if (closest === popGap) {
+    return { label: 'TRACK: FACE', color: VICE.cyan,   hint: `Pop ${pop} → need ${popGap} more for LEGEND.` };
+  }
+  if (closest === heatGap) {
+    return { label: 'TRACK: HEEL', color: VICE.border, hint: `Heat ${heat} → need ${heatGap} more for CHAMP.` };
+  }
+  return { label: 'TRACK: WORKHORSE', color: VICE.yellow, hint: `Push ${push} → need ${pushGap} more.` };
 }
 function MiniStat({ label, value, color }) {
   return (
@@ -363,7 +435,7 @@ function ChapterStrip({ scene, chapterScenes, partsIndex }) {
 
 // ─── GAME SCREEN — visual-novel beat flow ─────────────────────────────────────
 
-function GameScreen({ game, onChoice, onAdvance }) {
+function GameScreen({ game, onChoice, onAdvance, onMatchEnd }) {
   const scene  = getSceneByIndex(game.character, game.sceneIndex);
   const total  = getTotalScenes(game.character);
   const isLastScene = game.sceneIndex >= total - 1;
@@ -428,9 +500,10 @@ function GameScreen({ game, onChoice, onAdvance }) {
     <View>
       <MiniHud game={game} />
       <ChapterStrip scene={scene} chapterScenes={chapterScenes} partsIndex={partsIndex} />
-      <ScenePanel scene={scene} />
 
-      {beat?.type === 'choice' ? (
+      {scene.type === 'match' ? (
+        <MatchScreen game={game} scene={scene} onMatchEnd={onMatchEnd} />
+      ) : beat?.type === 'choice' ? (
         <ChoiceMenu choices={beat.options} onSelect={pickChoice} />
       ) : (
         <DialogueBox
@@ -444,6 +517,247 @@ function GameScreen({ game, onChoice, onAdvance }) {
           }
         />
       )}
+
+      <ScenePanel scene={scene} />
+    </View>
+  );
+}
+
+// ─── MATCH SCREEN ─────────────────────────────────────────────────────────────
+function MatchScreen({ game, scene, onMatchEnd }) {
+  const opponent = (OPPONENTS[game.character] || []).find(o => o.id === scene.opponentId);
+  const [phase, setPhase] = useState('intro'); // intro → exchange(R1,R2) → midMatch → exchange(R3) → climax → resolve → aftermath
+  const [beatIdx, setBeatIdx] = useState(0);
+  const [exData, setExData] = useState(null);
+  const [exIdx, setExIdx] = useState(0);
+  const [midChoice, setMidChoice] = useState(null);
+  const [climax, setClimax] = useState(null);
+  const [afterIdx, setAfterIdx] = useState(0);
+
+  useEffect(() => {
+    if (phase === 'exchange' && !exData) {
+      setExData(playExchanges(game, opponent));
+    }
+  }, [phase]);
+
+  if (!opponent) {
+    return (
+      <View style={styles.dialogueBox}>
+        <Text style={styles.dialogueText}>[match scene missing opponent: {scene.opponentId}]</Text>
+      </View>
+    );
+  }
+
+  // ── INTRO PHASE ───────────────────────────────────────────────
+  if (phase === 'intro') {
+    const intro = scene.intro || [];
+    const beat = intro[beatIdx];
+    const isLast = beatIdx >= intro.length - 1;
+    return (
+      <DialogueBox
+        text={beat?.text}
+        speaker={beat?.type === 'speech' ? beat.speaker : null}
+        onAdvance={() => {
+          if (isLast) { setPhase('exchange'); setBeatIdx(0); }
+          else setBeatIdx(beatIdx + 1);
+        }}
+        advanceHint={isLast ? '▶ BELL RINGS' : '▶ CONTINUE'}
+      />
+    );
+  }
+
+  // ── EXCHANGE PHASE ────────────────────────────────────────────
+  if (phase === 'exchange') {
+    if (!exData) return null;
+    const ex = exData.exchanges[exIdx];
+    const isLast = exIdx >= exData.exchanges.length - 1;
+    const lean = Math.max(game.pop, game.heat);
+    const oppAtk = ex.oppMove.stat === 'pow' ? opponent.stats.pow : opponent.stats.cha;
+    const yourAtk = ex.yourMove.stat === 'pow' ? lean : (game.pop + game.heat);
+    return (
+      <View>
+        <OpponentHud opponent={opponent} oppHp={ex.oppHp} yourHp={ex.yourHp} yourHpStart={exData.yourHpStart} />
+        <View style={styles.exchangeBox}>
+          <Text style={styles.exchangeRound}>ROUND {ex.round}</Text>
+
+          <Text style={styles.exchangeLine}>
+            <Text style={{ color: VICE.border }}>→ {opponent.name.toUpperCase()}: </Text>
+            <Text style={{ color: VICE.text }}>{ex.oppMove.name}</Text>
+            <Text style={{ color: VICE.textDim }}> [{ex.oppMove.rarity || 'common'}]</Text>
+            <Text style={{ color: VICE.border }}>  −{ex.dmgIn} HP</Text>
+          </Text>
+          <Text style={styles.mathLine}>
+            P{ex.oppMove.power} + ({ex.oppMove.stat.toUpperCase()} {oppAtk} − PUSH {game.push})/10 = {ex.dmgIn}
+          </Text>
+
+          <Text style={styles.exchangeLine}>
+            <Text style={{ color: VICE.cyan }}>→ YOU ({game.pop >= game.heat ? 'FACE' : 'HEEL'}): </Text>
+            <Text style={{ color: VICE.text }}>{ex.yourMove.name}</Text>
+            <Text style={{ color: VICE.textDim }}> [{ex.yourMove.rarity || 'common'} · {ex.yourMove.alignment || 'any'}]</Text>
+            <Text style={{ color: VICE.cyan }}>  −{ex.dmgOut} HP</Text>
+          </Text>
+          <Text style={styles.mathLine}>
+            P{ex.yourMove.power} + (LEAN {yourAtk} − DEF {opponent.stats.def})/10 = {ex.dmgOut}
+          </Text>
+
+          <Pressable onPress={() => {
+            if (isLast) setPhase('climax');
+            else if (exIdx === 1) setPhase('midMatch');
+            else setExIdx(exIdx + 1);
+          }} style={styles.btnWide && [styles.btn, styles.btnWide]}>
+            <Text style={styles.btnText}>{isLast ? '▶ CLIMAX' : exIdx === 1 ? '▶ THE MOMENT' : '▶ NEXT ROUND'}</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // ── MID-MATCH PHASE ───────────────────────────────────────────
+  if (phase === 'midMatch') {
+    return (
+      <View>
+        <OpponentHud opponent={opponent} oppHp={exData.exchanges[1].oppHp} yourHp={exData.exchanges[1].yourHp} yourHpStart={exData.yourHpStart} />
+        <View style={styles.climaxBox}>
+          <Text style={styles.exchangeRound}>THE MOMENT</Text>
+          <Text style={[styles.dialogueText, { marginBottom: 12 }]}>
+            Both of you are slow. The crowd is loud. You\'ve got one move that isn\'t in the playbook before he hits his finisher.
+          </Text>
+          {MID_MATCH_OPTIONS.map(o => (
+            <Pressable key={o.key} onPress={() => {
+              setMidChoice(o);
+              setExIdx(2);
+              setPhase('exchange');
+            }} style={[styles.btn, styles.btnWide]}>
+              <Text style={styles.btnText}>{o.label}</Text>
+              <Text style={[styles.mathLine, { marginLeft: 0, textAlign: 'center' }]}>{o.tagline}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+    );
+  }
+
+  // ── CLIMAX PHASE ──────────────────────────────────────────────
+  if (phase === 'climax') {
+    const midBonus = midChoice?.bonus || {};
+    const preview = climaxPreview(game, opponent, midBonus);
+    const pct = v => `${Math.round(v * 100)}%`;
+    const bonusTag = (kind) => {
+      const b = midBonus[kind];
+      if (!b) return '';
+      return ` (${b > 0 ? '+' : ''}${Math.round(b * 100)}%)`;
+    };
+    const opts = [
+      { key: 'stayDown', label: 'STAY DOWN', color: VICE.textDim,
+        sub: 'TAKE THE L · sympathy crowd' },
+      { key: 'kickOut',  label: 'EAT IT',    color: VICE.cyan,
+        sub: `${pct(preview.kickOut.odds)}${bonusTag('kickOut')}  ·  PUSH ${preview.kickOut.your} vs DEF ${preview.kickOut.threshold}` },
+      { key: 'counter',  label: 'REVERSE',   color: VICE.yellow,
+        sub: `${pct(preview.counter.odds)}${bonusTag('counter')}  ·  ${preview.counter.statName} ${preview.counter.your} vs POW ${preview.counter.threshold}` }
+    ];
+    return (
+      <View>
+        <OpponentHud opponent={opponent} oppHp={exData.oppHp} yourHp={exData.yourHp} yourHpStart={exData.yourHpStart} />
+        <View style={styles.climaxBox}>
+          <Text style={styles.exchangeRound}>FINISHER INCOMING</Text>
+          <Text style={[styles.dialogueText, { marginBottom: 6 }]}>
+            {opponent.name} sets up the {opponent.finisher}.
+          </Text>
+          {midChoice && (
+            <Text style={[styles.mathLine, { marginLeft: 0, marginBottom: 12 }]}>
+              {midChoice.flavor}
+            </Text>
+          )}
+          {opts.map(o => (
+            <Pressable key={o.key} onPress={() => {
+              setClimax(resolveClimax(game, opponent, o.key, midBonus));
+              setPhase('resolve');
+            }} style={[styles.btn, styles.btnWide, { borderColor: o.color }]}>
+              <Text style={[styles.btnText, { color: o.color }]}>{o.label}  ·  {o.sub}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+    );
+  }
+
+  // ── RESOLVE PHASE ─────────────────────────────────────────────
+  if (phase === 'resolve') {
+    const won = climax.success;
+    const label =
+      climax.kind === 'stayDown' ? 'YOU STAY DOWN. THREE COUNT. THE CROWD STANDS ANYWAY.'
+      : won && climax.kind === 'kickOut' ? 'YOU EAT IT. KICK OUT AT 2.9. THE ARENA EXPLODES.'
+      : won && climax.kind === 'counter' ? 'REVERSED. YOUR FINISHER LANDS. THREE. ONE-TWO-THREE.'
+      : climax.kind === 'kickOut' ? 'YOU ATE IT. SHOULDERS DOWN. THREE COUNT.'
+      : 'CAUGHT MID-COUNTER. PINNED CLEAN. CRUSHED.';
+    return (
+      <View>
+        <OpponentHud opponent={opponent} oppHp={exData.oppHp} yourHp={exData.yourHp} yourHpStart={exData.yourHpStart} />
+        <View style={[styles.climaxBox, { borderColor: won ? VICE.cyan : VICE.border }]}>
+          <Text style={[styles.exchangeRound, { color: won ? VICE.cyan : VICE.border }]}>
+            {won ? '★ WIN ★' : 'LOSS'}
+          </Text>
+          <Text style={[styles.dialogueText, { marginBottom: 8 }]}>{label}</Text>
+          {climax.kind === 'stayDown' ? (
+            <Text style={styles.mathLine}>STAY DOWN · auto-lose by choice</Text>
+          ) : (
+            <Text style={styles.mathLine}>
+              ODDS {Math.round(climax.odds * 100)}%  ·  ROLLED {Math.round(climax.roll * 100)}  ·  {climax.success ? 'HIT' : 'MISS'}
+              {'\n'}{climax.statName} {climax.your} vs {climax.threshold}
+            </Text>
+          )}
+          <Text style={[styles.mathLine, { marginTop: 6 }]}>
+            HP at climax — YOU {exData.yourHp}/{exData.yourHpStart} · {opponent.name.toUpperCase()} {exData.oppHp}/{opponent.hp}
+          </Text>
+          <Pressable onPress={() => setPhase('aftermath')} style={[styles.btn, styles.btnWide]}>
+            <Text style={styles.btnText}>▶ AFTERMATH</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // ── AFTERMATH PHASE ───────────────────────────────────────────
+  if (phase === 'aftermath') {
+    const won = climax.success;
+    const beats = won ? (scene.afterWin || []) : (scene.afterLoss || []);
+    const beat = beats[afterIdx];
+    const isLast = afterIdx >= beats.length - 1;
+    if (!beats.length) {
+      onMatchEnd({ won });
+      return null;
+    }
+    return (
+      <DialogueBox
+        text={beat?.text}
+        speaker={beat?.type === 'speech' ? beat.speaker : null}
+        onAdvance={() => {
+          if (isLast) onMatchEnd({ won });
+          else setAfterIdx(afterIdx + 1);
+        }}
+        advanceHint={isLast ? '▶ NEXT CHAPTER' : '▶ CONTINUE'}
+      />
+    );
+  }
+
+  return null;
+}
+
+function OpponentHud({ opponent, oppHp, yourHp, yourHpStart }) {
+  const yourPct = Math.max(0, Math.min(100, (yourHp / yourHpStart) * 100));
+  const oppPct  = Math.max(0, Math.min(100, (oppHp / opponent.hp) * 100));
+  return (
+    <View style={styles.oppHud}>
+      <View style={styles.hpRow}>
+        <Text style={[styles.hpLabel, { color: VICE.border }]}>{opponent.name.toUpperCase()}</Text>
+        <View style={styles.hpBarBg}><View style={[styles.hpBarFill, { width: `${oppPct}%`, backgroundColor: VICE.border }]} /></View>
+        <Text style={[styles.hpVal, { color: VICE.border }]}>{oppHp}/{opponent.hp}</Text>
+      </View>
+      <View style={styles.hpRow}>
+        <Text style={[styles.hpLabel, { color: VICE.cyan }]}>YOU</Text>
+        <View style={styles.hpBarBg}><View style={[styles.hpBarFill, { width: `${yourPct}%`, backgroundColor: VICE.cyan }]} /></View>
+        <Text style={[styles.hpVal, { color: VICE.cyan }]}>{yourHp}/{yourHpStart}</Text>
+      </View>
     </View>
   );
 }
@@ -692,7 +1006,13 @@ const styles = StyleSheet.create({
   },
   choiceMenuText: {
     fontFamily: PIXEL, fontSize: 12, color: VICE.text,
-    flex: 1, lineHeight: 22
+    lineHeight: 22
+  },
+  effectsRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 },
+  effectChip: {
+    fontFamily: PIXEL, fontSize: 8, letterSpacing: 1,
+    borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2,
+    marginRight: 6, marginTop: 2
   },
 
   // ─── mini HUD strip at top ─────────────────────────────────────────────
@@ -706,6 +1026,16 @@ const styles = StyleSheet.create({
   miniStat:     { alignItems: 'center', marginLeft: 10, minWidth: 36 },
   miniStatLabel:{ fontFamily: PIXEL, fontSize: 7, letterSpacing: 1 },
   miniStatValue:{ fontFamily: PIXEL, fontSize: 11, marginTop: 2 },
+
+  objectiveBar: {
+    borderWidth: 1, borderColor: VICE.borderDim, borderTopWidth: 0,
+    backgroundColor: VICE.bgLight, paddingHorizontal: 10, paddingVertical: 4,
+    flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap',
+    marginBottom: 8, marginTop: -8
+  },
+  objectiveLabel: { fontFamily: PIXEL, fontSize: 8, color: VICE.textDim, letterSpacing: 1, marginRight: 8 },
+  objectiveText:  { fontFamily: PIXEL, fontSize: 10, letterSpacing: 1, marginRight: 10 },
+  objectiveHint:  { fontFamily: PIXEL, fontSize: 8, color: VICE.textDim },
 
   muteBtn: {
     marginLeft: 12, paddingHorizontal: 8, paddingVertical: 4,
@@ -729,6 +1059,37 @@ const styles = StyleSheet.create({
   statBarBg:   { flex: 1, height: 12, borderWidth: 1, borderColor: VICE.textDim, marginHorizontal: 8, backgroundColor: VICE.black },
   statBarFill: { height: '100%' },
   statValue:   { fontFamily: PIXEL, fontSize: 9, width: 26, textAlign: 'right' },
+
+  // ─── match interface ───────────────────────────────────────────────────
+  oppHud: {
+    borderWidth: 2, borderColor: VICE.yellow, backgroundColor: VICE.panel,
+    padding: 10, marginBottom: 10
+  },
+  hpRow:   { flexDirection: 'row', alignItems: 'center', marginVertical: 3 },
+  hpLabel: { fontFamily: PIXEL, fontSize: 9, width: 110, letterSpacing: 1 },
+  hpBarBg: { flex: 1, height: 10, borderWidth: 1, borderColor: VICE.textDim, marginHorizontal: 6, backgroundColor: VICE.black },
+  hpBarFill: { height: '100%' },
+  hpVal:   { fontFamily: PIXEL, fontSize: 9, width: 60, textAlign: 'right' },
+
+  exchangeBox: {
+    borderWidth: 3, borderColor: VICE.cyan, backgroundColor: VICE.bg,
+    padding: 14, marginTop: 6
+  },
+  exchangeRound: {
+    fontFamily: PIXEL, fontSize: 11, color: VICE.yellow, letterSpacing: 2,
+    textAlign: 'center', marginBottom: 10
+  },
+  exchangeLine: {
+    fontFamily: PIXEL, fontSize: 10, lineHeight: 18, marginBottom: 2
+  },
+  mathLine: {
+    fontFamily: PIXEL, fontSize: 8, lineHeight: 14, color: VICE.textDim,
+    marginLeft: 12, marginBottom: 8
+  },
+  climaxBox: {
+    borderWidth: 3, borderColor: VICE.yellow, backgroundColor: VICE.bg,
+    padding: 14, marginTop: 6
+  },
 
   scanlines: {
     ...StyleSheet.absoluteFillObject,

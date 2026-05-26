@@ -16,6 +16,635 @@ import { WIN_THRESHOLDS, ENDING_GATES, GM_TRUST_BONUS } from './constants';
 // }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// DISGRUNTLED JOBBER — 24 mini-scenes. 8 chapters × 3 beats each.
+// Beats: (a) backstage / pre-moment, (b) the moment itself, (c) aftermath.
+// Stat deltas are small (1-2) since there are 3x as many picks per chapter.
+// Scene fields: { id, chapter, part, chapterTitle, location, setup, choices: [...] }
+// ──────────────────────────────────────────────────────────────────────────────
+const JOBBER = [
+  // ─── CH 1 — DEBUT (visual novel beats) ─────────────────────────────────
+  {
+    id: 'jobber_1a', chapter: 1, part: 'a',
+    chapterTitle: 'DEBUT', location: 'The ring · opening line',
+    musicCue: 'play',
+    beats: [
+      {  text: "After ten years in the indies... there were a lot of nights I didn’t know if I’d ever stand in this ring again. But while this company moved on... I rebuilt myself. I went from being overlooked to undeniable. And if there’s one thing I learned out there — bet on yourself long enough, eventually the whole world has to pay attention." },
+      { type: 'narration', text: 'GM hands you the mic. "Don\'t make me regret it." Your music hits.' },
+      { type: 'narration', text: 'You walk to the ring. Half the crowd is on their phones. The other half doesn\'t know who you are.' },
+      { type: 'narration', text: 'You bring the mic to your mouth. The first thing you say decides everything.' },
+      {
+        type: 'choice',
+        options: [
+          {
+            text: '"I know none of you came out here for me. That\'s alright. I came here for me."',
+            effects: { pop: 5 },
+            response: [
+              { type: 'narration', text: 'Scattered, surprised pop from the smart marks.' },
+              { type: 'speech', speaker: 'VOICE (cheap seats)', text: "Let\'s go, kid!" }
+            ]
+          },
+          {
+            text: '"Ten years on this card. Ten years. Not one of you knows my name."',
+            effects: { heat: 5 },
+            response: [
+              { type: 'narration', text: 'Real heat. Not the worked kind. Boos roll from the front row back.' }
+            ]
+          },
+          {
+            text: '"I\'m not asking for the spot. I\'m taking it."',
+            effects: { pop: 2, heat: 2, push: 2 },
+            response: [
+              { type: 'narration', text: 'Confused murmur. Nobody knows what this is yet.' },
+              { type: 'speech', speaker: 'VOICE', text: "Whose music is this?" }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'jobber_1b', chapter: 1, part: 'b',
+    chapterTitle: 'DEBUT', location: 'The ring · they\'re listening now',
+    beats: [
+      { type: 'narration', text: 'The crowd is locked in. Phones down. Whatever you said next had better land.' },
+      {
+        type: 'choice',
+        options: [
+          {
+            text: '"I\'m not the guy on the poster. I\'m the guy who keeps showing up after you cut him."',
+            effects: { pop: 5 },
+            response: [
+              { type: 'narration', text: 'The cheap seats start a "you deserve it" chant. It catches.' }
+            ]
+          },
+          {
+            text: '"Every one of you forgot me. Tonight I make sure you remember."',
+            effects: { heat: 5 },
+            response: [
+              { type: 'narration', text: 'The boos sharpen. You picked a fight. They like fighting back.' }
+            ]
+          },
+          {
+            text: '"I don\'t need your cheers. I don\'t need your boos. I need this microphone for thirty more seconds."',
+            effects: { pop: 2, heat: 2, push: 2 },
+            response: [
+              { type: 'narration', text: 'A laugh from somewhere in row three. The booker leans forward backstage.' }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'jobber_1c', chapter: 1, part: 'c',
+    chapterTitle: 'DEBUT', location: 'The ring · the closer',
+    beats: [
+      { type: 'narration', text: 'You let the crowd settle. Whatever you say next is what they\'ll quote on the way home.' },
+      {
+        type: 'choice',
+        options: [
+          {
+            text: '"Send me anybody. I\'ll out-work him. That\'s the only promise I make."',
+            effects: { pop: 6, push: 2 },
+            response: [
+              { type: 'narration', text: 'The pop is real. A small "let\'s go kid" chant breaks out.' }
+            ]
+          },
+          {
+            text: '"Whoever comes through that curtain — I\'m going to hurt him on purpose."',
+            effects: { heat: 6, push: 2 },
+            response: [
+              { type: 'narration', text: 'The arena gets loud. Not cheers. Not boos. Both.' }
+            ]
+          },
+          {
+            text: '"Whoever you put in front of me, the booker\'s about to learn something."',
+            effects: { pop: 3, heat: 3, push: 4 },
+            response: [
+              { type: 'narration', text: 'GM\'s eyes narrow on the monitor. That was a threat to the boss. They liked it.' }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  // ─── CH 1 — DEBUT MATCH (game interface, not prose) ─────────────────────
+  // After the ring promo, the opponent's music hits and the match interface
+  // takes over. No story choices inside the match — only the mechanic
+  // (3 rounds of move draws + climax choice). Win/loss branches the aftermath.
+  {
+    id: 'jobber_1_match', chapter: 1, part: 'd', type: 'match',
+    chapterTitle: 'DEBUT', location: 'The ring',
+    opponentId: 'the_squash',
+    intro: [
+      { type: 'narration', text: "Chad Excellence's music hits before you can finish your thought." },
+      { type: 'narration', text: 'He swaggers down the ramp like the building belongs to him. Crowd half-pops out of habit.' },
+      { type: 'narration', text: "He doesn't even look at you on the way in. The ref signals for the bell." },
+      { type: 'narration', text: 'Lockup.' }
+    ],
+    afterWin: [
+      { type: 'narration', text: '[TODO] You pin him. The ref counts three. Crowd reaction.' },
+      { type: 'narration', text: '[TODO] Walk back through the curtain. GM reaction.' }
+    ],
+    afterLoss: [
+      { type: 'narration', text: '[TODO] He pins you. Same as it ever was.' },
+      { type: 'narration', text: '[TODO] Walk back. Agent\'s line. The cycle continues.' }
+    ]
+  },
+
+  // ─── CH 2 — RIVAL INTRODUCED ────────────────────────────────────────────
+  {
+    id: 'jobber_2a', chapter: 2, part: 'a',
+    chapterTitle: 'THE BOOKER\'S OFFICE', location: "Booker's office",
+    setup: "Booker's office. He doesn't look up from his laptop. \"I'm giving you a spot. Don't make me regret it. Do the job — twice, kid. Two clean jobs. Then we talk about your spot on the card.\"",
+    choices: [
+      {
+        text: '"Whatever you need, boss."',
+        effects: { push: 2 },
+        flag: { workedTheBookerDelta: 1 },
+        outcome: 'Nod without looking up. Push climbs. You ate it. Again.'
+      },
+      {
+        text: '"I\'ve been doing my job for ten years. The \'next month\' never comes."',
+        effects: { heat: 2, push: -2 },
+        outcome: 'He looks up. "Then quit." Goes back to the laptop.'
+      },
+      {
+        text: '"What\'s the something? I\'ll do it. But I need to know."',
+        effects: {},
+        outcome: 'He actually closes the laptop. "Listen..." The plan is real. Maybe.',
+        conditional: state => state.heat > state.pop || (state.flags.workedTheBooker || 0) >= 1
+          ? { push: 2 }
+          : { push: 0 }
+      }
+    ]
+  },
+  {
+    id: 'jobber_2b', chapter: 2, part: 'b',
+    chapterTitle: 'THE HALLWAY', location: 'Backstage hallway',
+    setup: "Walking back to the locker room. A vet you came up with is leaning against the wall. He saw you go in. \"What\'d he say?\"",
+    choices: [
+      {
+        text: '"He\'s putting me in something."',
+        effects: { pop: 1 },
+        outcome: 'Vet nods. "Good. You earned it." Stays leaning.'
+      },
+      {
+        text: '"Nothing I haven\'t heard before."',
+        effects: { heat: 1 },
+        outcome: 'Vet half-laughs. "Yeah." Pushes off the wall.'
+      },
+      {
+        text: '"Same shit."',
+        effects: { push: 1 },
+        outcome: 'Vet smiles small. "Sure."'
+      }
+    ]
+  },
+  {
+    id: 'jobber_2c', chapter: 2, part: 'c',
+    chapterTitle: 'THE LOCKER ROOM', location: 'Locker room',
+    setup: "The rookie you're scheduled to work tonight is in the corner, lacing his boots. He sees you. Stops.",
+    choices: [
+      {
+        text: '(Walk over. Introduce yourself. Set the tone.)',
+        effects: { pop: 1 },
+        outcome: 'Rookie\'s shoulders relax. He shakes your hand. "I won\'t let you down."'
+      },
+      {
+        text: '(Walk past. Ignore him.)',
+        effects: { heat: 1 },
+        outcome: 'Rookie tries to say something. You don\'t hear it.'
+      },
+      {
+        text: '(Nod once, sit down across the room.)',
+        effects: { push: 1 },
+        outcome: 'Rookie understands. Sits. Doesn\'t speak.'
+      }
+    ]
+  },
+
+  // ─── CH 3 — FIRST BUSINESS DECISION ─────────────────────────────────────
+  {
+    id: 'jobber_3a', chapter: 3, part: 'a',
+    chapterTitle: 'THE BOOKING', location: 'Locker room doorway',
+    setup: "Agent in the locker room doorway. \"You\'re putting the rookie over tonight. Quick squash. Three minutes. He needs the rub.\"",
+    choices: [
+      {
+        text: '"Sure thing. I\'ll make him look strong."',
+        effects: { push: 2, pop: -1 },
+        flag: { workedTheBookerDelta: 1 },
+        outcome: '"Good kid." He walks.'
+      },
+      {
+        text: '"I\'m not laying down for some green kid who couldn\'t tell you my finisher."',
+        effects: { heat: 3, push: -3 },
+        outcome: 'Long silence. "I\'ll let him know." He doesn\'t.'
+      },
+      {
+        text: '"I\'ll do it. But after the match I want five minutes with the booker. Yes or no."',
+        effects: {},
+        flag: { workedTheBookerDelta: 1 },
+        outcome: '"Five minutes. Don\'t waste \'em." He nods once.',
+        conditional: state => state.heat > state.pop || (state.flags.workedTheBooker || 0) >= 1
+          ? { push: 2 }
+          : { push: 0 }
+      }
+    ]
+  },
+  {
+    id: 'jobber_3b', chapter: 3, part: 'b',
+    chapterTitle: 'THE GORILLA', location: 'Curtain, pre-match',
+    setup: "Pre-match at the curtain. The rookie is white-knuckling the rope three steps away. He turns. \"Hey — you wanna call it out there? I\'ve never done a TV spot.\"",
+    choices: [
+      {
+        text: '"I\'ll call it. You just hit hard and sell big."',
+        effects: { pop: 1, push: 1 },
+        outcome: 'He exhales. "Thank you, man." First peaceful breath he\'s taken.'
+      },
+      {
+        text: '"Call your own match, kid. You wanted this spot."',
+        effects: { heat: 1 },
+        outcome: 'He nods like he expected it. Doesn\'t say anything.'
+      },
+      {
+        text: '"We\'ll feel it out."',
+        effects: { pop: 1, heat: 1 },
+        outcome: 'He doesn\'t know what to do with that. Says "ok" twice.'
+      }
+    ]
+  },
+  {
+    id: 'jobber_3_match', chapter: 3, part: 'c', type: 'match',
+    chapterTitle: 'THE SCREWJOB', location: 'The ring',
+    opponentId: 'the_rookie',
+    intro: [
+      { type: 'narration', text: "Tyler Knox's music hits. The booker's pick. Three months on TV and already a polished entrance video." },
+      { type: 'narration', text: 'He sprints down the ramp. Crowd reacts on cue — the company wants them to. Most of them oblige.' },
+      { type: 'narration', text: 'He slides under the bottom rope and points at you. Doesn\'t say a word.' },
+      { type: 'narration', text: "Bell. The booked finish is a clothesline into a clean three. You know what you're supposed to do. Whether you do it is the only question that matters tonight." }
+    ],
+    afterWin: [
+      { type: 'narration', text: '[TODO] You pin the rookie clean. The arena freezes. So does the booker.' },
+      { type: 'narration', text: '[TODO] Walk back through the curtain. Agent\'s face is unreadable. Booker is already yelling at someone.' }
+    ],
+    afterLoss: [
+      { type: 'narration', text: '[TODO] The kid pins you. Job done. Booker exhales backstage.' },
+      { type: 'narration', text: '[TODO] Walk back. Agent gives you the nod. Tyler\'s already cutting a promo on the monitor.' }
+    ]
+  },
+
+  // ─── CH 4 — IT GETS PERSONAL ────────────────────────────────────────────
+  {
+    id: 'jobber_4a', chapter: 4, part: 'a',
+    chapterTitle: 'THE CURTAIN', location: 'Gorilla position',
+    setup: "Curtain. Agent\'s voice is softer than usual. \"Booker\'s watching this one. Do the job clean. He likes that.\"",
+    choices: [
+      {
+        text: '"Clean. I got it. I\'ll see him after."',
+        effects: {},
+        flag: { gmTrusted: true },
+        outcome: 'Agent gives you a small nod. The kind he doesn\'t give twice a year.'
+      },
+      {
+        text: '"I\'ve heard that one before."',
+        effects: { push: 2 },
+        flag: { gmTrusted: false },
+        outcome: 'Agent doesn\'t answer. Walks.'
+      },
+      {
+        text: '"We\'ll see what the match gives us."',
+        effects: { pop: 1, heat: 1 },
+        outcome: 'Agent half-laughs. "Don\'t be a hero." Pause. "Or do."'
+      }
+    ]
+  },
+  {
+    id: 'jobber_4b', chapter: 4, part: 'b',
+    chapterTitle: 'STIFF SHOT', location: 'Mid-match, the ring',
+    setup: "Match is going well. Opponent — a midcarder you've worked five times — throws a forearm a foot too hard. Right in your jaw. The crowd noticed. He looks at you.",
+    choices: [
+      {
+        text: '(Eat it. Keep the match going.)',
+        effects: { pop: 1, push: 1 },
+        outcome: 'Crowd respects it. Opponent looks ashamed. Match continues.'
+      },
+      {
+        text: '(Receipt. Give him one back, harder.)',
+        effects: { heat: 2 },
+        outcome: 'He sells big — too big. Worked heat is now real heat. Match gets stiff the rest of the way.'
+      },
+      {
+        text: '(Shoot back. Take him down for real. End the match.)',
+        effects: { heat: 3, push: -2 },
+        outcome: 'He\'s on his back not selling. Ref doesn\'t know what to do. Bell rings early.'
+      }
+    ]
+  },
+  {
+    id: 'jobber_4c', chapter: 4, part: 'c',
+    chapterTitle: 'CATERING', location: 'Backstage catering',
+    setup: "Catering. He's at a table with a vet. Sees you walk in. The vet looks up too. Everyone\'s waiting.",
+    choices: [
+      {
+        text: '(Sit at the table. Eat. Don\'t say anything.)',
+        effects: { pop: 1, push: 1 },
+        outcome: 'He thaws. The vet thaws. After a minute he says "sorry, man." Everyone keeps eating.'
+      },
+      {
+        text: '(Walk past, loud enough for him to hear: "Be careful out there next time.")',
+        effects: { heat: 2 },
+        outcome: 'He stops chewing. Doesn\'t look up. The vet does.'
+      },
+      {
+        text: '(Pull up a chair. "We good?" Look him in the eye.)',
+        effects: { pop: 1, heat: 1 },
+        outcome: 'He looks at you for a long second. "Yeah. We\'re good." The vet exhales.'
+      }
+    ]
+  },
+
+  // ─── CH 5 — THE TURN ────────────────────────────────────────────────────
+  {
+    id: 'jobber_5a', chapter: 5, part: 'a',
+    chapterTitle: 'PRODUCTION MEETING', location: 'Production meeting room',
+    setup: "Big production meeting. The board is up. Every name on the card is on it. Yours isn't. Booker is going through the runsheet. Doesn\'t look at you.",
+    choices: [
+      {
+        text: '(Stand up.) "I should be on this card."',
+        effects: { heat: 2, push: -1 },
+        outcome: 'Booker laughs without smiling. "You should be?" Long silence. You sit.'
+      },
+      {
+        text: '(Stay seated. Take notes. Wait for the meeting to end.)',
+        effects: { push: 1 },
+        outcome: 'Meeting ends. People file out. You\'re invisible. Same as it ever was.'
+      },
+      {
+        text: '(Stand up.) "Three weeks from now. Give me a singles spot. I\'ll prepare anything."',
+        effects: {},
+        flag: { workedTheBookerDelta: 1 },
+        outcome: 'Booker actually pauses. "Three weeks. We\'ll see." Not yes. Not no.',
+        conditional: state => state.heat > state.pop || (state.flags.workedTheBooker || 0) >= 1
+          ? { push: 2 }
+          : { push: 0 }
+      }
+    ]
+  },
+  {
+    id: 'jobber_5b', chapter: 5, part: 'b',
+    chapterTitle: 'THE COFFEE MACHINE', location: 'Catering, after the meeting',
+    setup: "Whatever you did or didn't do, the room cleared. The vet from earlier is at the coffee machine. He saw the whole thing.",
+    choices: [
+      {
+        text: '"What do you think?"',
+        effects: { pop: 1, push: 1 },
+        outcome: 'Vet thinks. "You did what you had to. Now stay ready." Hands you a coffee.'
+      },
+      {
+        text: '"He\'s never gonna give me a spot. We both know it."',
+        effects: { heat: 1 },
+        outcome: 'Vet looks at you. "Maybe. Maybe not." Drinks his coffee.'
+      },
+      {
+        text: '(Don\'t say anything. Get coffee. Walk.)',
+        effects: { push: 1 },
+        outcome: 'Vet watches you go. Doesn\'t say a word. Nods once.'
+      }
+    ]
+  },
+  {
+    id: 'jobber_5c', chapter: 5, part: 'c',
+    chapterTitle: 'LOCKER ROOM RUMOR', location: 'Locker room',
+    setup: "Two of the boys are murmuring. They stop when you walk in. The bigger one says, loud and casual: \"Heard you went into business for yourself at the meeting.\"",
+    choices: [
+      {
+        text: '"I asked for a spot. That\'s not into business for myself."',
+        effects: { pop: 1 },
+        outcome: 'He shrugs. "Alright." Murmuring stops.'
+      },
+      {
+        text: '"What\'s it to you?"',
+        effects: { heat: 1, push: -1 },
+        outcome: 'He stares. Doesn\'t blink. Goes back to lacing his boots.'
+      },
+      {
+        text: '(Look at him. Don\'t answer. Open your locker.)',
+        effects: { push: 1 },
+        outcome: 'He waits for an answer. Doesn\'t get one. Eventually goes back to his bag.'
+      }
+    ]
+  },
+
+  // ─── CH 6 — PROMO WAR ───────────────────────────────────────────────────
+  {
+    id: 'jobber_6a', chapter: 6, part: 'a',
+    chapterTitle: 'SCRIPT NOTES', location: "Booker's desk",
+    setup: "First real promo segment in over a year. Booker actually wrote script notes. Three pages. He hands them to you. \"Stick to this. We don\'t have time for surprises.\"",
+    choices: [
+      {
+        text: '(Read every line. Memorize it. Go with the script.)',
+        effects: { push: 2 },
+        flag: { workedTheBookerDelta: 1 },
+        outcome: 'Booker watches you read. Nods. "Good." Walks.'
+      },
+      {
+        text: '(Skim it. Toss it in the bin. Wing it.)',
+        effects: { heat: 2 },
+        outcome: 'Booker doesn\'t see you toss it. Yet. He will. After.'
+      },
+      {
+        text: '(Read it. Keep the structure. Change the words.)',
+        effects: { pop: 1, push: 1 },
+        outcome: 'Booker doesn\'t notice. The Agent does. Half-smile.'
+      }
+    ]
+  },
+  {
+    id: 'jobber_6b', chapter: 6, part: 'b',
+    chapterTitle: 'THE WALK OUT', location: 'Entrance ramp',
+    setup: "Your music hits. The rival is already in the ring. He's got the mic. He's been talking for two minutes. Crowd is hot on him already.",
+    choices: [
+      {
+        text: '(Walk down with purpose. Don\'t acknowledge him.)',
+        effects: { pop: 1, push: 1 },
+        outcome: 'Crowd respects the all-business approach. Cheers build.'
+      },
+      {
+        text: '(Stop on the ramp. Stare at him.)',
+        effects: { heat: 2 },
+        outcome: 'He stops talking. The arena gets quiet. Cameras hold the shot.'
+      },
+      {
+        text: '(Walk past the ring. Grab the second mic from the announcer. Walk in slow.)',
+        effects: { pop: 2, push: 1 },
+        outcome: 'Smart-mark pop. He notices. The crowd reads everything.'
+      }
+    ]
+  },
+  {
+    id: 'jobber_6c', chapter: 6, part: 'c',
+    chapterTitle: 'THE PROMO', location: 'Center ring',
+    setup: "You're in the ring. The mic is yours. The arena is full and listening. This doesn't happen often.",
+    choices: [
+      {
+        text: '"I\'m not gonna apologize for being here. I belong on this card. I always did."',
+        effects: { pop: 2, heat: -1 },
+        outcome: 'Slow pop. Then a "you deserve it" chant from section 220.'
+      },
+      {
+        text: '"Every one of you watched me lose for a decade. You knew my name. You just didn\'t say it. Say it now."',
+        effects: { heat: 2, pop: 1 },
+        outcome: 'Chant of your name. Both sides of the arena. Loud both ways.'
+      },
+      {
+        text: '"This is one chance. I\'m not wasting it on threats. You\'ll see what I came to do."',
+        effects: { pop: 1, heat: 1, push: 1 },
+        outcome: 'Arena holds. Pin-drop quiet. Then a long, building roar.'
+      }
+    ]
+  },
+
+  // ─── CH 7 — CONTRACT SIGNING ────────────────────────────────────────────
+  {
+    id: 'jobber_7a', chapter: 7, part: 'a',
+    chapterTitle: 'THE HALLWAY', location: 'Backstage hallway',
+    setup: "Walking to the gorilla. The Booker himself appears in the hallway. He's never come to find you before. He stops. Looks at you.",
+    choices: [
+      {
+        text: '(Stop. Wait for him to speak first.)',
+        effects: { push: 1 },
+        outcome: 'He sizes you up. "Don\'t disappoint me." Walks past.'
+      },
+      {
+        text: '"Boss." (Acknowledge, keep walking.)',
+        effects: { pop: 1 },
+        outcome: 'He grunts. Keeps walking. Says over his shoulder: "Don\'t disappoint me."'
+      },
+      {
+        text: '(Hold his eyes. Say nothing.)',
+        effects: { heat: 1, push: 1 },
+        outcome: 'He holds your eyes back. "Don\'t disappoint me." Walks past slower than he needed to.'
+      }
+    ]
+  },
+  {
+    id: 'jobber_7b', chapter: 7, part: 'b',
+    chapterTitle: 'THE TABLE', location: 'Contract signing, the ring',
+    setup: "Contract signing. You're at the table. Rival across. Pen between you. Crowd is feral. The Booker is at ringside.",
+    choices: [
+      {
+        text: '(Sign clean. Slide it back. Stand up.)',
+        effects: { push: 2 },
+        flag: { workedTheBookerDelta: 1 },
+        outcome: 'Crowd polite. Rival respects it. Booker exhales.'
+      },
+      {
+        text: '(Sign. Then flip the table.)',
+        effects: { heat: 3, pop: 1 },
+        outcome: 'Crowd loses it. Rival has to roll out. Booker is laughing despite himself.'
+      },
+      {
+        text: '(Don\'t sign.) "Add no-DQ. Then we sign."',
+        effects: { pop: 1, heat: 1, push: 1 },
+        outcome: 'Booker walks over. Looks at the contract. Adds the line. Hands it back. The arena explodes.'
+      }
+    ]
+  },
+  {
+    id: 'jobber_7c', chapter: 7, part: 'c',
+    chapterTitle: 'AFTER', location: 'Backstage hallway',
+    setup: "Back through the curtain. The hallway is empty for once. You can hear the crowd buzzing through the wall.",
+    choices: [
+      {
+        text: '(Find the Agent. Thank him.)',
+        effects: { pop: 1 },
+        outcome: 'Agent looks up. "Don\'t thank me yet." Half-smile.'
+      },
+      {
+        text: '(Find the rival\'s locker room. Door\'s open. Look in.)',
+        effects: { heat: 2 },
+        outcome: 'He\'s pacing. Doesn\'t see you. You watch for ten seconds. Walk away.'
+      },
+      {
+        text: '(Go straight to your locker. Sit down. Don\'t talk to anyone.)',
+        effects: { push: 1 },
+        outcome: 'You sit. The buzz keeps going through the wall. You listen.'
+      }
+    ]
+  },
+
+  // ─── CH 8 — CHAMPIONSHIP ────────────────────────────────────────────────
+  {
+    id: 'jobber_8a', chapter: 8, part: 'a',
+    chapterTitle: 'THE CURTAIN', location: 'Gorilla position',
+    setup: "PPV night. Your music is queued. The Agent is at the curtain.",
+    choices: [
+      {
+        text: '(Listen to whatever he says. Follow it.)',
+        effects: { push: 1 },
+        outcome: 'Agent: "Whatever happens — you earned this spot. Go." Tap on the shoulder.'
+      },
+      {
+        text: '(Don\'t engage. Stretch. Wait for the cue.)',
+        effects: { heat: 1 },
+        outcome: 'Agent doesn\'t speak. Just nods at the music cue.'
+      },
+      {
+        text: '"I appreciate it." (Look him in the eye.)',
+        effects: { pop: 1 },
+        outcome: 'Agent: "Yeah you do." Quiet.'
+      }
+    ]
+  },
+  {
+    id: 'jobber_8b', chapter: 8, part: 'b',
+    chapterTitle: 'THE WALK', location: 'Entrance ramp',
+    setup: "Full house. Your music is real this time — they remixed it for the PPV. Crowd is split: half came because they love you, half came to watch you fail. Both halves are loud.",
+    choices: [
+      {
+        text: '(Walk slow. Take in every face.)',
+        effects: { pop: 2 },
+        outcome: 'The pop is real. Phones are up. This is being filmed for thirty different reasons.'
+      },
+      {
+        text: '(Walk fast. Head down. Eyes on the ring.)',
+        effects: { push: 2 },
+        outcome: 'All business. Workers in the back nod. That\'s how a champion walks.'
+      },
+      {
+        text: '(Stop halfway. Drop to a knee. Tie your boot for ten seconds.)',
+        effects: { heat: 2, pop: 1 },
+        outcome: 'Crowd doesn\'t know what they\'re watching. Then they realize you\'re stalling. They start a chant.'
+      }
+    ]
+  },
+  {
+    id: 'jobber_8c', chapter: 8, part: 'c',
+    chapterTitle: 'THE FINAL WORD', location: 'Center ring',
+    setup: "You're in the ring. Rival across from you. Bell hasn't rung. Ref has the mic. He hands it to you. Last chance to say anything to anyone in this building.",
+    choices: [
+      {
+        text: '"I worked ten years to be here. I\'m not leaving without it."',
+        effects: { pop: 3 },
+        outcome: 'Crowd erupts. They believe you. They\'ve decided. This is your night.'
+      },
+      {
+        text: '"Every guy that ever pinned me clean. Every booker that wrote me off. Watch this."',
+        effects: { heat: 3, pop: 1 },
+        outcome: 'Both halves of the crowd chant. The arena is shaking. The ref takes the mic carefully.'
+      },
+      {
+        text: '"Don\'t say my name yet. Wait til the bell rings. Then you\'ll know."',
+        effects: { pop: 2, push: 2 },
+        outcome: 'Quiet hangs for a second. Then a long building roar. The booker watches the monitor. He doesn\'t blink.'
+      }
+    ]
+  }
+];
+
+// ──────────────────────────────────────────────────────────────────────────────
 // NEPO SON — gain 15. All 8 scenes are promos.
 // ──────────────────────────────────────────────────────────────────────────────
 const NEPO = [
@@ -744,669 +1373,12 @@ const CLOWN = [
   }
 ];
 
-// ──────────────────────────────────────────────────────────────────────────────
-// DISGRUNTLED JOBBER — 24 mini-scenes. 8 chapters × 3 beats each.
-// Beats: (a) backstage / pre-moment, (b) the moment itself, (c) aftermath.
-// Stat deltas are small (1-2) since there are 3x as many picks per chapter.
-// Scene fields: { id, chapter, part, chapterTitle, location, setup, choices: [...] }
-// ──────────────────────────────────────────────────────────────────────────────
-const JOBBER = [
-  // ─── CH 1 — DEBUT (visual novel beats) ─────────────────────────────────
-  {
-    id: 'jobber_1a', chapter: 1, part: 'a',
-    chapterTitle: 'DEBUT', location: 'Backstage',
-    beats: [
-      { type: 'narration', text: 'Ten years on the indies.' },
-      { type: 'narration', text: 'Light tubes to the head in VFW halls. Bingo parlors. Converted barns.' },
-      { type: 'narration', text: 'Barbed wire bundles for cash out of a coffee can.' },
-      { type: 'narration', text: "Twenty stitches above the right eye. Two pins in the left wrist. A spinal fusion nobody asks about." },
-      { type: 'narration', text: "Money was never the reason. There isn't any in this version of the business." },
-      { type: 'narration', text: "You're a wrestler. That's the only honest answer you've ever had for the question." },
-      { type: 'narration', text: "And tonight you're back in the big leagues." },
-      { type: 'narration', text: 'AWF. Same company that cut you a decade ago.' },
-      { type: 'narration', text: 'Whether anyone in this hallway remembers your name or not.' },
-      { type: 'narration', text: 'The fluorescent overhead buzzes.' },
-      { type: 'narration', text: 'On the other side of the curtain, the previous match ends to a polite, dying pop.' },
-      { type: 'narration', text: "You stand in your gear. Same singlet you've been wearing for ten years. Tape on your wrists." },
-      { type: 'narration', text: 'The General Manager appears beside you.' },
-      { type: 'speech', speaker: 'GM', text: "You're up." },
-      { type: 'narration', text: "He doesn't look up from his clipboard." },
-      { type: 'speech', speaker: 'GM', text: "Don't make me look stupid." },
-      { type: 'narration', text: "He sighs. Like he's done this conversation a hundred times." },
-      { type: 'speech', speaker: 'GM', text: "Three things, kid. Make 'em love you, make 'em hate you — don't matter which." },
-      { type: 'speech', speaker: 'GM', text: "Just don't make me regret it." },
-      { type: 'narration', text: 'He extends a black microphone. The metal is cold.' },
-      {
-        type: 'choice',
-        options: [
-          {
-            text: '"You won\'t."',
-            effects: { push: 1 },
-            response: [
-              { type: 'narration', text: 'GM finally looks up.' },
-              { type: 'narration', text: 'Small nod. Almost approval.' },
-              { type: 'speech', speaker: 'GM', text: 'Good.' },
-              { type: 'narration', text: 'He walks back to his radio.' }
-            ]
-          },
-          {
-            text: '"About time."',
-            effects: { heat: 2, pop: -1 },
-            response: [
-              { type: 'narration', text: 'GM stops.' },
-              { type: 'narration', text: 'Stares at you for a long beat.' },
-              { type: 'speech', speaker: 'GM', text: 'Mhm.' },
-              { type: 'narration', text: 'He walks off without saying another word.' }
-            ]
-          },
-          {
-            text: "(Take the mic. Don't say a word.)",
-            effects: { pop: 1, heat: 1 },
-            response: [
-              { type: 'narration', text: 'You take the mic.' },
-              { type: 'narration', text: 'GM watches you turn toward the curtain.' },
-              { type: 'narration', text: "He doesn't move." }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'jobber_1b', chapter: 1, part: 'b',
-    chapterTitle: 'DEBUT', location: 'Top of the ramp',
-    musicCue: 'play',
-    beats: [
-      { type: 'narration', text: 'Your music hits.' },
-      { type: 'narration', text: "The same generic synth-rock theme they've used for you since 2014." },
-      { type: 'narration', text: 'You walk through the curtain.' },
-      { type: 'narration', text: 'The lights are brighter than you remembered.' },
-      { type: 'narration', text: "Below you — the crowd. Half on their phones. The other half don't know who you are." },
-      { type: 'narration', text: "Nobody's chanting." },
-      { type: 'narration', text: 'You stand at the top of the ramp. A few seconds before you have to move.' },
-      {
-        type: 'choice',
-        options: [
-          {
-            text: '(Walk slow. Soak it in.)',
-            effects: { pop: 1 },
-            response: [
-              { type: 'narration', text: 'A few people put their phones down. Just a few.' },
-              { type: 'narration', text: 'Someone in section 220 says "who is this guy?" loud enough to carry.' }
-            ]
-          },
-          {
-            text: '(Stomp down hard. Make them notice.)',
-            effects: { heat: 2 },
-            response: [
-              { type: 'narration', text: 'Front row notices.' },
-              { type: 'narration', text: "Someone says your name out loud — first time tonight." },
-              { type: 'narration', text: 'The smarks in the cheap seats start a small "holy shit" chant. Most of the arena is still confused.' }
-            ]
-          },
-          {
-            text: '(Stop at the apron. Look up at the lights for a beat.)',
-            effects: { pop: 1, push: 1 },
-            response: [
-              { type: 'narration', text: 'Camera catches you mid-pause.' },
-              { type: 'narration', text: 'Producer in the truck pauses on the shot.' },
-              { type: 'narration', text: 'The arena gets quieter. That looked like something.' }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'jobber_1c', chapter: 1, part: 'c',
-    chapterTitle: 'DEBUT', location: 'In the ring',
-    musicCue: 'stop',
-    beats: [
-      { type: 'narration', text: 'You roll into the ring.' },
-      { type: 'narration', text: 'The mic is hot. The cable trails behind you.' },
-      { type: 'narration', text: 'You walk a slow circle, looking up at the crowd from inside the ropes.' },
-      { type: 'narration', text: "The arena is still figuring out what they're watching." },
-      { type: 'narration', text: 'Someone in the front row, sympathetic, claps once. It echoes.' },
-      { type: 'narration', text: 'Backstage on the monitor, the Booker just looked up from his coffee for the first time tonight.' },
-      { type: 'narration', text: 'You bring the mic to your mouth.' },
-      { type: 'narration', text: 'This is the moment. What you say next decides who they think you are.' },
-      {
-        type: 'choice',
-        options: [
-          {
-            text: '"I know none of you came out here for me. That\'s alright. I came here for me."',
-            effects: { pop: 5, heat: -1 },
-            response: [
-              { type: 'narration', text: 'Scattered, surprised pop from the smart marks in the cheap seats.' },
-              { type: 'speech', speaker: 'VOICE (cheap seats)', text: "Let's go, kid!" },
-              { type: 'narration', text: 'A few more phones come down. The crowd starts to pick a side. Yours.' }
-            ]
-          },
-          {
-            text: '"Ten years on this card. Ten years. Not one of you knows my name."',
-            effects: { heat: 5, pop: -1 },
-            response: [
-              { type: 'narration', text: 'Real heat. Not the worked kind.' },
-              { type: 'narration', text: 'Boos start in the front row and roll back through the building.' },
-              { type: 'speech', speaker: 'GM (over radio)', text: 'What is he doing.' },
-              { type: 'narration', text: "You picked a fight with the crowd. They'll remember it. So will the GM — heels are easier to book." }
-            ]
-          },
-          {
-            text: '"Tonight I\'m not asking for the spot. I\'m taking it."',
-            effects: { pop: 2, heat: 2, push: 2 },
-            response: [
-              { type: 'narration', text: 'Confused murmur. Nobody knows what this is yet.' },
-              { type: 'speech', speaker: 'VOICE', text: "Whose music is this?" },
-              { type: 'narration', text: 'The GM watches the monitor with arms crossed. Curious. Uncommitted.' }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-
-  // ─── CH 2 — RIVAL INTRODUCED ────────────────────────────────────────────
-  {
-    id: 'jobber_2a', chapter: 2, part: 'a',
-    chapterTitle: 'THE BOOKER\'S OFFICE', location: "Booker's office",
-    setup: "Booker's office. He doesn't look up from his laptop. \"I'm giving you a spot. Don't make me regret it. Do the job — twice, kid. Two clean jobs. Then we talk about your spot on the card.\"",
-    choices: [
-      {
-        text: '"Whatever you need, boss."',
-        effects: { push: 2 },
-        flag: { workedTheBookerDelta: 1 },
-        outcome: 'Nod without looking up. Push climbs. You ate it. Again.'
-      },
-      {
-        text: '"I\'ve been doing my job for ten years. The \'next month\' never comes."',
-        effects: { heat: 2, push: -2 },
-        outcome: 'He looks up. "Then quit." Goes back to the laptop.'
-      },
-      {
-        text: '"What\'s the something? I\'ll do it. But I need to know."',
-        effects: {},
-        outcome: 'He actually closes the laptop. "Listen..." The plan is real. Maybe.',
-        conditional: state => state.heat > state.pop || (state.flags.workedTheBooker || 0) >= 1
-          ? { push: 2 }
-          : { push: 0 }
-      }
-    ]
-  },
-  {
-    id: 'jobber_2b', chapter: 2, part: 'b',
-    chapterTitle: 'THE HALLWAY', location: 'Backstage hallway',
-    setup: "Walking back to the locker room. A vet you came up with is leaning against the wall. He saw you go in. \"What\'d he say?\"",
-    choices: [
-      {
-        text: '"He\'s putting me in something."',
-        effects: { pop: 1 },
-        outcome: 'Vet nods. "Good. You earned it." Stays leaning.'
-      },
-      {
-        text: '"Nothing I haven\'t heard before."',
-        effects: { heat: 1 },
-        outcome: 'Vet half-laughs. "Yeah." Pushes off the wall.'
-      },
-      {
-        text: '"Same shit."',
-        effects: { push: 1 },
-        outcome: 'Vet smiles small. "Sure."'
-      }
-    ]
-  },
-  {
-    id: 'jobber_2c', chapter: 2, part: 'c',
-    chapterTitle: 'THE LOCKER ROOM', location: 'Locker room',
-    setup: "The rookie you're scheduled to work tonight is in the corner, lacing his boots. He sees you. Stops.",
-    choices: [
-      {
-        text: '(Walk over. Introduce yourself. Set the tone.)',
-        effects: { pop: 1 },
-        outcome: 'Rookie\'s shoulders relax. He shakes your hand. "I won\'t let you down."'
-      },
-      {
-        text: '(Walk past. Ignore him.)',
-        effects: { heat: 1 },
-        outcome: 'Rookie tries to say something. You don\'t hear it.'
-      },
-      {
-        text: '(Nod once, sit down across the room.)',
-        effects: { push: 1 },
-        outcome: 'Rookie understands. Sits. Doesn\'t speak.'
-      }
-    ]
-  },
-
-  // ─── CH 3 — FIRST BUSINESS DECISION ─────────────────────────────────────
-  {
-    id: 'jobber_3a', chapter: 3, part: 'a',
-    chapterTitle: 'THE BOOKING', location: 'Locker room doorway',
-    setup: "Agent in the locker room doorway. \"You\'re putting the rookie over tonight. Quick squash. Three minutes. He needs the rub.\"",
-    choices: [
-      {
-        text: '"Sure thing. I\'ll make him look strong."',
-        effects: { push: 2, pop: -1 },
-        flag: { workedTheBookerDelta: 1 },
-        outcome: '"Good kid." He walks.'
-      },
-      {
-        text: '"I\'m not laying down for some green kid who couldn\'t tell you my finisher."',
-        effects: { heat: 3, push: -3 },
-        outcome: 'Long silence. "I\'ll let him know." He doesn\'t.'
-      },
-      {
-        text: '"I\'ll do it. But after the match I want five minutes with the booker. Yes or no."',
-        effects: {},
-        flag: { workedTheBookerDelta: 1 },
-        outcome: '"Five minutes. Don\'t waste \'em." He nods once.',
-        conditional: state => state.heat > state.pop || (state.flags.workedTheBooker || 0) >= 1
-          ? { push: 2 }
-          : { push: 0 }
-      }
-    ]
-  },
-  {
-    id: 'jobber_3b', chapter: 3, part: 'b',
-    chapterTitle: 'THE GORILLA', location: 'Curtain, pre-match',
-    setup: "Pre-match at the curtain. The rookie is white-knuckling the rope three steps away. He turns. \"Hey — you wanna call it out there? I\'ve never done a TV spot.\"",
-    choices: [
-      {
-        text: '"I\'ll call it. You just hit hard and sell big."',
-        effects: { pop: 1, push: 1 },
-        outcome: 'He exhales. "Thank you, man." First peaceful breath he\'s taken.'
-      },
-      {
-        text: '"Call your own match, kid. You wanted this spot."',
-        effects: { heat: 1 },
-        outcome: 'He nods like he expected it. Doesn\'t say anything.'
-      },
-      {
-        text: '"We\'ll feel it out."',
-        effects: { pop: 1, heat: 1 },
-        outcome: 'He doesn\'t know what to do with that. Says "ok" twice.'
-      }
-    ]
-  },
-  {
-    id: 'jobber_3c', chapter: 3, part: 'c',
-    chapterTitle: 'THE FINISH', location: 'Mid-match, the ring',
-    setup: "Three minutes in. The booked finish is a clothesline into a quick three-count. He's running the ropes. Right now you decide what happens.",
-    choices: [
-      {
-        text: '(Take the clothesline. Lie still. Take the three.)',
-        effects: { push: 2, pop: -1 },
-        flag: { workedTheBookerDelta: 1 },
-        outcome: 'Three count. Crowd is mild. Rookie celebrates. Agent gives you a nod at the curtain.'
-      },
-      {
-        text: '(Duck the clothesline. Hit your finisher. Pin him.)',
-        effects: { heat: 3, push: -3 },
-        outcome: 'Crowd goes WHAT. Rookie in shock. Agent\'s mouth opens. Booker is yelling already.'
-      },
-      {
-        text: '(Take the clothesline, kick out at two. Sell big. Then eat a second finisher for the three.)',
-        effects: { pop: 1, push: 1 },
-        outcome: 'Crowd cheered the kickout. Then went silent. Then cheered the second finisher. You made him.'
-      }
-    ]
-  },
-
-  // ─── CH 4 — IT GETS PERSONAL ────────────────────────────────────────────
-  {
-    id: 'jobber_4a', chapter: 4, part: 'a',
-    chapterTitle: 'THE CURTAIN', location: 'Gorilla position',
-    setup: "Curtain. Agent\'s voice is softer than usual. \"Booker\'s watching this one. Do the job clean. He likes that.\"",
-    choices: [
-      {
-        text: '"Clean. I got it. I\'ll see him after."',
-        effects: {},
-        flag: { gmTrusted: true },
-        outcome: 'Agent gives you a small nod. The kind he doesn\'t give twice a year.'
-      },
-      {
-        text: '"I\'ve heard that one before."',
-        effects: { push: 2 },
-        flag: { gmTrusted: false },
-        outcome: 'Agent doesn\'t answer. Walks.'
-      },
-      {
-        text: '"We\'ll see what the match gives us."',
-        effects: { pop: 1, heat: 1 },
-        outcome: 'Agent half-laughs. "Don\'t be a hero." Pause. "Or do."'
-      }
-    ]
-  },
-  {
-    id: 'jobber_4b', chapter: 4, part: 'b',
-    chapterTitle: 'STIFF SHOT', location: 'Mid-match, the ring',
-    setup: "Match is going well. Opponent — a midcarder you've worked five times — throws a forearm a foot too hard. Right in your jaw. The crowd noticed. He looks at you.",
-    choices: [
-      {
-        text: '(Eat it. Keep the match going.)',
-        effects: { pop: 1, push: 1 },
-        outcome: 'Crowd respects it. Opponent looks ashamed. Match continues.'
-      },
-      {
-        text: '(Receipt. Give him one back, harder.)',
-        effects: { heat: 2 },
-        outcome: 'He sells big — too big. Worked heat is now real heat. Match gets stiff the rest of the way.'
-      },
-      {
-        text: '(Shoot back. Take him down for real. End the match.)',
-        effects: { heat: 3, push: -2 },
-        outcome: 'He\'s on his back not selling. Ref doesn\'t know what to do. Bell rings early.'
-      }
-    ]
-  },
-  {
-    id: 'jobber_4c', chapter: 4, part: 'c',
-    chapterTitle: 'CATERING', location: 'Backstage catering',
-    setup: "Catering. He's at a table with a vet. Sees you walk in. The vet looks up too. Everyone\'s waiting.",
-    choices: [
-      {
-        text: '(Sit at the table. Eat. Don\'t say anything.)',
-        effects: { pop: 1, push: 1 },
-        outcome: 'He thaws. The vet thaws. After a minute he says "sorry, man." Everyone keeps eating.'
-      },
-      {
-        text: '(Walk past, loud enough for him to hear: "Be careful out there next time.")',
-        effects: { heat: 2 },
-        outcome: 'He stops chewing. Doesn\'t look up. The vet does.'
-      },
-      {
-        text: '(Pull up a chair. "We good?" Look him in the eye.)',
-        effects: { pop: 1, heat: 1 },
-        outcome: 'He looks at you for a long second. "Yeah. We\'re good." The vet exhales.'
-      }
-    ]
-  },
-
-  // ─── CH 5 — THE TURN ────────────────────────────────────────────────────
-  {
-    id: 'jobber_5a', chapter: 5, part: 'a',
-    chapterTitle: 'PRODUCTION MEETING', location: 'Production meeting room',
-    setup: "Big production meeting. The board is up. Every name on the card is on it. Yours isn't. Booker is going through the runsheet. Doesn\'t look at you.",
-    choices: [
-      {
-        text: '(Stand up.) "I should be on this card."',
-        effects: { heat: 2, push: -1 },
-        outcome: 'Booker laughs without smiling. "You should be?" Long silence. You sit.'
-      },
-      {
-        text: '(Stay seated. Take notes. Wait for the meeting to end.)',
-        effects: { push: 1 },
-        outcome: 'Meeting ends. People file out. You\'re invisible. Same as it ever was.'
-      },
-      {
-        text: '(Stand up.) "Three weeks from now. Give me a singles spot. I\'ll prepare anything."',
-        effects: {},
-        flag: { workedTheBookerDelta: 1 },
-        outcome: 'Booker actually pauses. "Three weeks. We\'ll see." Not yes. Not no.',
-        conditional: state => state.heat > state.pop || (state.flags.workedTheBooker || 0) >= 1
-          ? { push: 2 }
-          : { push: 0 }
-      }
-    ]
-  },
-  {
-    id: 'jobber_5b', chapter: 5, part: 'b',
-    chapterTitle: 'THE COFFEE MACHINE', location: 'Catering, after the meeting',
-    setup: "Whatever you did or didn't do, the room cleared. The vet from earlier is at the coffee machine. He saw the whole thing.",
-    choices: [
-      {
-        text: '"What do you think?"',
-        effects: { pop: 1, push: 1 },
-        outcome: 'Vet thinks. "You did what you had to. Now stay ready." Hands you a coffee.'
-      },
-      {
-        text: '"He\'s never gonna give me a spot. We both know it."',
-        effects: { heat: 1 },
-        outcome: 'Vet looks at you. "Maybe. Maybe not." Drinks his coffee.'
-      },
-      {
-        text: '(Don\'t say anything. Get coffee. Walk.)',
-        effects: { push: 1 },
-        outcome: 'Vet watches you go. Doesn\'t say a word. Nods once.'
-      }
-    ]
-  },
-  {
-    id: 'jobber_5c', chapter: 5, part: 'c',
-    chapterTitle: 'LOCKER ROOM RUMOR', location: 'Locker room',
-    setup: "Two of the boys are murmuring. They stop when you walk in. The bigger one says, loud and casual: \"Heard you went into business for yourself at the meeting.\"",
-    choices: [
-      {
-        text: '"I asked for a spot. That\'s not into business for myself."',
-        effects: { pop: 1 },
-        outcome: 'He shrugs. "Alright." Murmuring stops.'
-      },
-      {
-        text: '"What\'s it to you?"',
-        effects: { heat: 1, push: -1 },
-        outcome: 'He stares. Doesn\'t blink. Goes back to lacing his boots.'
-      },
-      {
-        text: '(Look at him. Don\'t answer. Open your locker.)',
-        effects: { push: 1 },
-        outcome: 'He waits for an answer. Doesn\'t get one. Eventually goes back to his bag.'
-      }
-    ]
-  },
-
-  // ─── CH 6 — PROMO WAR ───────────────────────────────────────────────────
-  {
-    id: 'jobber_6a', chapter: 6, part: 'a',
-    chapterTitle: 'SCRIPT NOTES', location: "Booker's desk",
-    setup: "First real promo segment in over a year. Booker actually wrote script notes. Three pages. He hands them to you. \"Stick to this. We don\'t have time for surprises.\"",
-    choices: [
-      {
-        text: '(Read every line. Memorize it. Go with the script.)',
-        effects: { push: 2 },
-        flag: { workedTheBookerDelta: 1 },
-        outcome: 'Booker watches you read. Nods. "Good." Walks.'
-      },
-      {
-        text: '(Skim it. Toss it in the bin. Wing it.)',
-        effects: { heat: 2 },
-        outcome: 'Booker doesn\'t see you toss it. Yet. He will. After.'
-      },
-      {
-        text: '(Read it. Keep the structure. Change the words.)',
-        effects: { pop: 1, push: 1 },
-        outcome: 'Booker doesn\'t notice. The Agent does. Half-smile.'
-      }
-    ]
-  },
-  {
-    id: 'jobber_6b', chapter: 6, part: 'b',
-    chapterTitle: 'THE WALK OUT', location: 'Entrance ramp',
-    setup: "Your music hits. The rival is already in the ring. He's got the mic. He's been talking for two minutes. Crowd is hot on him already.",
-    choices: [
-      {
-        text: '(Walk down with purpose. Don\'t acknowledge him.)',
-        effects: { pop: 1, push: 1 },
-        outcome: 'Crowd respects the all-business approach. Cheers build.'
-      },
-      {
-        text: '(Stop on the ramp. Stare at him.)',
-        effects: { heat: 2 },
-        outcome: 'He stops talking. The arena gets quiet. Cameras hold the shot.'
-      },
-      {
-        text: '(Walk past the ring. Grab the second mic from the announcer. Walk in slow.)',
-        effects: { pop: 2, push: 1 },
-        outcome: 'Smart-mark pop. He notices. The crowd reads everything.'
-      }
-    ]
-  },
-  {
-    id: 'jobber_6c', chapter: 6, part: 'c',
-    chapterTitle: 'THE PROMO', location: 'Center ring',
-    setup: "You're in the ring. The mic is yours. The arena is full and listening. This doesn't happen often.",
-    choices: [
-      {
-        text: '"I\'m not gonna apologize for being here. I belong on this card. I always did."',
-        effects: { pop: 2, heat: -1 },
-        outcome: 'Slow pop. Then a "you deserve it" chant from section 220.'
-      },
-      {
-        text: '"Every one of you watched me lose for a decade. You knew my name. You just didn\'t say it. Say it now."',
-        effects: { heat: 2, pop: 1 },
-        outcome: 'Chant of your name. Both sides of the arena. Loud both ways.'
-      },
-      {
-        text: '"This is one chance. I\'m not wasting it on threats. You\'ll see what I came to do."',
-        effects: { pop: 1, heat: 1, push: 1 },
-        outcome: 'Arena holds. Pin-drop quiet. Then a long, building roar.'
-      }
-    ]
-  },
-
-  // ─── CH 7 — CONTRACT SIGNING ────────────────────────────────────────────
-  {
-    id: 'jobber_7a', chapter: 7, part: 'a',
-    chapterTitle: 'THE HALLWAY', location: 'Backstage hallway',
-    setup: "Walking to the gorilla. The Booker himself appears in the hallway. He's never come to find you before. He stops. Looks at you.",
-    choices: [
-      {
-        text: '(Stop. Wait for him to speak first.)',
-        effects: { push: 1 },
-        outcome: 'He sizes you up. "Don\'t disappoint me." Walks past.'
-      },
-      {
-        text: '"Boss." (Acknowledge, keep walking.)',
-        effects: { pop: 1 },
-        outcome: 'He grunts. Keeps walking. Says over his shoulder: "Don\'t disappoint me."'
-      },
-      {
-        text: '(Hold his eyes. Say nothing.)',
-        effects: { heat: 1, push: 1 },
-        outcome: 'He holds your eyes back. "Don\'t disappoint me." Walks past slower than he needed to.'
-      }
-    ]
-  },
-  {
-    id: 'jobber_7b', chapter: 7, part: 'b',
-    chapterTitle: 'THE TABLE', location: 'Contract signing, the ring',
-    setup: "Contract signing. You're at the table. Rival across. Pen between you. Crowd is feral. The Booker is at ringside.",
-    choices: [
-      {
-        text: '(Sign clean. Slide it back. Stand up.)',
-        effects: { push: 2 },
-        flag: { workedTheBookerDelta: 1 },
-        outcome: 'Crowd polite. Rival respects it. Booker exhales.'
-      },
-      {
-        text: '(Sign. Then flip the table.)',
-        effects: { heat: 3, pop: 1 },
-        outcome: 'Crowd loses it. Rival has to roll out. Booker is laughing despite himself.'
-      },
-      {
-        text: '(Don\'t sign.) "Add no-DQ. Then we sign."',
-        effects: { pop: 1, heat: 1, push: 1 },
-        outcome: 'Booker walks over. Looks at the contract. Adds the line. Hands it back. The arena explodes.'
-      }
-    ]
-  },
-  {
-    id: 'jobber_7c', chapter: 7, part: 'c',
-    chapterTitle: 'AFTER', location: 'Backstage hallway',
-    setup: "Back through the curtain. The hallway is empty for once. You can hear the crowd buzzing through the wall.",
-    choices: [
-      {
-        text: '(Find the Agent. Thank him.)',
-        effects: { pop: 1 },
-        outcome: 'Agent looks up. "Don\'t thank me yet." Half-smile.'
-      },
-      {
-        text: '(Find the rival\'s locker room. Door\'s open. Look in.)',
-        effects: { heat: 2 },
-        outcome: 'He\'s pacing. Doesn\'t see you. You watch for ten seconds. Walk away.'
-      },
-      {
-        text: '(Go straight to your locker. Sit down. Don\'t talk to anyone.)',
-        effects: { push: 1 },
-        outcome: 'You sit. The buzz keeps going through the wall. You listen.'
-      }
-    ]
-  },
-
-  // ─── CH 8 — CHAMPIONSHIP ────────────────────────────────────────────────
-  {
-    id: 'jobber_8a', chapter: 8, part: 'a',
-    chapterTitle: 'THE CURTAIN', location: 'Gorilla position',
-    setup: "PPV night. Your music is queued. The Agent is at the curtain.",
-    choices: [
-      {
-        text: '(Listen to whatever he says. Follow it.)',
-        effects: { push: 1 },
-        outcome: 'Agent: "Whatever happens — you earned this spot. Go." Tap on the shoulder.'
-      },
-      {
-        text: '(Don\'t engage. Stretch. Wait for the cue.)',
-        effects: { heat: 1 },
-        outcome: 'Agent doesn\'t speak. Just nods at the music cue.'
-      },
-      {
-        text: '"I appreciate it." (Look him in the eye.)',
-        effects: { pop: 1 },
-        outcome: 'Agent: "Yeah you do." Quiet.'
-      }
-    ]
-  },
-  {
-    id: 'jobber_8b', chapter: 8, part: 'b',
-    chapterTitle: 'THE WALK', location: 'Entrance ramp',
-    setup: "Full house. Your music is real this time — they remixed it for the PPV. Crowd is split: half came because they love you, half came to watch you fail. Both halves are loud.",
-    choices: [
-      {
-        text: '(Walk slow. Take in every face.)',
-        effects: { pop: 2 },
-        outcome: 'The pop is real. Phones are up. This is being filmed for thirty different reasons.'
-      },
-      {
-        text: '(Walk fast. Head down. Eyes on the ring.)',
-        effects: { push: 2 },
-        outcome: 'All business. Workers in the back nod. That\'s how a champion walks.'
-      },
-      {
-        text: '(Stop halfway. Drop to a knee. Tie your boot for ten seconds.)',
-        effects: { heat: 2, pop: 1 },
-        outcome: 'Crowd doesn\'t know what they\'re watching. Then they realize you\'re stalling. They start a chant.'
-      }
-    ]
-  },
-  {
-    id: 'jobber_8c', chapter: 8, part: 'c',
-    chapterTitle: 'THE FINAL WORD', location: 'Center ring',
-    setup: "You're in the ring. Rival across from you. Bell hasn't rung. Ref has the mic. He hands it to you. Last chance to say anything to anyone in this building.",
-    choices: [
-      {
-        text: '"I worked ten years to be here. I\'m not leaving without it."',
-        effects: { pop: 3 },
-        outcome: 'Crowd erupts. They believe you. They\'ve decided. This is your night.'
-      },
-      {
-        text: '"Every guy that ever pinned me clean. Every booker that wrote me off. Watch this."',
-        effects: { heat: 3, pop: 1 },
-        outcome: 'Both halves of the crowd chant. The arena is shaking. The ref takes the mic carefully.'
-      },
-      {
-        text: '"Don\'t say my name yet. Wait til the bell rings. Then you\'ll know."',
-        effects: { pop: 2, push: 2 },
-        outcome: 'Quiet hangs for a second. Then a long building roar. The booker watches the monitor. He doesn\'t blink.'
-      }
-    ]
-  }
-];
-
 export const SCENES = {
+  jobber: JOBBER,
   nepo:   NEPO,
   outlaw: OUTLAW,
   cult:   CULT,
-  clown:  CLOWN,
-  jobber: JOBBER
+  clown:  CLOWN
 };
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -1442,6 +1414,11 @@ export const ENDINGS = {
     code: 'STILL_A_JOBBER',
     title: '★ STILL A JOBBER',
     body: "You knew what this was. You always knew. A loss. A real one. The Agent gave you a pat on the back and a fifty for a beer. See you next week, pal."
+  },
+  WORKHORSE: {
+    code: 'WORKHORSE',
+    title: '★ THE WORKHORSE',
+    body: "Push ≥ 65 at the bell. You never got over with the fans, never sold a shirt. But the booker stopped second-guessing your spot. The Agent puts you in every show. You\'re the guy who never misses a date and never blows a spot. They\'ll never chant your name. They\'ll never write a book about you. You\'ll work until you decide to stop. That\'s the career most of them dream about. Quietly."
   }
 };
 
@@ -1598,13 +1575,19 @@ export function computeWin(state) {
 
 export function getEnding(state) {
   const won = computeWin(state);
-  const { pop, heat, character } = state;
+  const { pop, heat, push, character } = state;
+
+  // WORKHORSE — push-track ending. Available to any archetype when push
+  // dominates and crowd stats lag. The booker's most reliable hand.
+  const workhorse = push >= 65 && pop < ENDING_GATES.legend && heat < ENDING_GATES.controversial;
 
   if (character === 'jobber') {
+    if (workhorse) return ENDINGS.WORKHORSE;
     return won ? ENDINGS.GREATEST_UPSET_EVER : ENDINGS.STILL_A_JOBBER;
   }
   if (won && pop  >= ENDING_GATES.legend)        return ENDINGS.LEGEND;
   if (won && heat >= ENDING_GATES.controversial) return ENDINGS.CONTROVERSIAL_CHAMP;
+  if (workhorse)                                  return ENDINGS.WORKHORSE;
   if (!won && pop >= ENDING_GATES.beloved)       return ENDINGS.BELOVED_LOSER;
   return ENDINGS.FORGOTTEN;
 }

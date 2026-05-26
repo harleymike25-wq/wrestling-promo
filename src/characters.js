@@ -7,7 +7,7 @@ export const CHARACTERS = {
     blurb: 'Ten years of jobs. Zero respect. Done.',
     primary: 'Pure business decisions',
     secondary: 'Rare promos are lifelines',
-    startStats: { pop: 15, heat: 15, push: 8 },
+    startStats: { pop: 0, heat: 0, push: 0 },
     gain: 5,
     comingSoon: false
   },
