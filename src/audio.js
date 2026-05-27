@@ -102,6 +102,7 @@ export async function toggleMute() {
 
 export async function stopTheme() {
   if (previewTimer) { clearTimeout(previewTimer); previewTimer = null; }
+  currentThemeId = null;
   if (!currentSound) return;
   try {
     await currentSound.stopAsync();
