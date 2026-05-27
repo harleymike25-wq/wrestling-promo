@@ -269,7 +269,7 @@ function MusicScreen({ draft, setDraft, onNext, onBack }) {
         return (
           <Pressable
             key={id}
-            onPress={() => { stopTheme(); setDraft({ ...draft, music: id }); }}
+            onPress={() => { previewTheme(id); setDraft({ ...draft, music: id }); }}
             style={[styles.card, selected && styles.cardSelected]}
           >
             <Text style={styles.cardTitle}>{t.label}</Text>
