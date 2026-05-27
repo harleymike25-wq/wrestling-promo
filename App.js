@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, Pressable, ScrollView, Image,
-  StyleSheet, SafeAreaView, StatusBar, Platform
+  StyleSheet, SafeAreaView, StatusBar, Platform, Animated
 } from 'react-native';
 import * as Font from 'expo-font';
 
@@ -727,12 +727,23 @@ function MatchScreen({ game, scene, onMatchEnd }) {
           {opts.map(o => (
             <Pressable key={o.key} onPress={() => {
               setClimax(resolveClimax(game, opponent, o.key, activeBonus));
-              setPhase('resolve');
+              setPhase('count');
             }} style={[styles.btn, styles.btnWide, { borderColor: o.color }]}>
               <Text style={[styles.btnText, { color: o.color }]}>{o.label}  ·  {o.sub}</Text>
             </Pressable>
           ))}
         </View>
+      </View>
+    );
+  }
+
+  // ── COUNT PHASE ───────────────────────────────────────────────
+  if (phase === 'count') {
+    const activeHp = postExData ?? exData;
+    return (
+      <View>
+        <OpponentHud opponent={opponent} oppHp={activeHp?.oppHp} yourHp={activeHp?.yourHp} yourHpStart={activeHp?.yourHpStart} />
+        <CountDisplay climax={climax} onDone={() => setPhase('resolve')} />
       </View>
     );
   }
@@ -917,6 +928,51 @@ function OpponentHud({ opponent, oppHp, yourHp, yourHpStart }) {
         <Text style={[styles.hpLabel, { color: VICE.cyan }]}>YOU</Text>
         <View style={styles.hpBarBg}><View style={[styles.hpBarFill, { width: `${yourPct}%`, backgroundColor: VICE.cyan }]} /></View>
         <Text style={[styles.hpVal, { color: VICE.cyan }]}>{yourHp}/{yourHpStart}</Text>
+      </View>
+    </View>
+  );
+}
+
+function CountDisplay({ climax, onDone }) {
+  const isKickout  = climax.kind === 'kickOut' && climax.success;
+  const isWin      = climax.kind === 'counter' && climax.success;
+  const isStayDown = climax.kind === 'stayDown';
+
+  const beatMs = isStayDown ? 420 : 780;
+
+  // Animated values for each beat
+  const a1 = useRef(new Animated.Value(0)).current;
+  const a2 = useRef(new Animated.Value(0)).current;
+  const a3 = useRef(new Animated.Value(0)).current;
+
+  const pop = (val) => Animated.spring(val, { toValue: 1, useNativeDriver: true, friction: 4 });
+
+  useEffect(() => {
+    const t1 = setTimeout(() => pop(a1).start(), beatMs);
+    const t2 = setTimeout(() => pop(a2).start(), beatMs * 2);
+    const t3 = setTimeout(() => pop(a3).start(), isKickout ? beatMs * 2.6 : beatMs * 3);
+    const td = setTimeout(onDone,                isKickout ? beatMs * 3.4 : beatMs * 3 + 900);
+    return () => [t1, t2, t3, td].forEach(clearTimeout);
+  }, []);
+
+  const numStyle = (anim) => ({
+    opacity: anim,
+    transform: [{ scale: anim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }]
+  });
+
+  const threeLabel = isKickout ? 'KICK\nOUT!' : isWin ? '3' : '3';
+  const threeColor = isKickout ? VICE.yellow  : isWin ? VICE.cyan : VICE.border;
+
+  return (
+    <View style={styles.countWrap}>
+      <Text style={styles.countLabel}>REF'S COUNT</Text>
+      <View style={styles.countRow}>
+        <Animated.Text style={[styles.countNum, numStyle(a1)]}>1</Animated.Text>
+        <Animated.Text style={[styles.countNum, numStyle(a2)]}>2</Animated.Text>
+        <Animated.Text style={[styles.countNum, { ...numStyle(a3), color: threeColor,
+          fontSize: isKickout ? 28 : 72, lineHeight: isKickout ? 34 : 80 }]}>
+          {threeLabel}
+        </Animated.Text>
       </View>
     </View>
   );
@@ -1149,6 +1205,19 @@ const styles = StyleSheet.create({
     fontFamily: PIXEL, fontSize: 11, color: VICE.yellow,
     textAlign: 'right', marginTop: 12, letterSpacing: 2,
     borderTopWidth: 1, borderTopColor: VICE.borderDim, paddingTop: 10
+  },
+
+  countWrap: {
+    alignItems: 'center', paddingVertical: 48
+  },
+  countLabel: {
+    fontFamily: PIXEL, fontSize: 8, color: VICE.textDim, letterSpacing: 2, marginBottom: 32
+  },
+  countRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 32
+  },
+  countNum: {
+    fontFamily: PIXEL, fontSize: 72, lineHeight: 80, color: VICE.text, textAlign: 'center'
   },
 
   choiceMenu: {
