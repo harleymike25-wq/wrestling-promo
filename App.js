@@ -481,9 +481,7 @@ function GameScreen({ game, onChoice, onAdvance, onMatchEnd }) {
   useEffect(() => {
     setBeats(buildInitialBeats());
     setBeatIndex(0);
-    // music cue — entrance scenes fire 'play', in-ring scenes fire 'stop'
-    if (scene.musicCue === 'play') playTheme(game.music);
-    else if (scene.musicCue === 'stop') stopTheme();
+    if (scene.musicCue === 'stop') stopTheme();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene.id]);
 
@@ -1199,11 +1197,6 @@ const styles = StyleSheet.create({
   objectiveText:  { fontFamily: PIXEL, fontSize: 10, letterSpacing: 1, marginRight: 10 },
   objectiveHint:  { fontFamily: PIXEL, fontSize: 8, color: VICE.textDim },
 
-  muteBtn: {
-    marginLeft: 12, paddingHorizontal: 8, paddingVertical: 4,
-    borderWidth: 1, borderColor: VICE.cyan
-  },
-  muteBtnText: { fontFamily: PIXEL, fontSize: 14, color: VICE.cyan },
 
   // ─── chapter strip ─────────────────────────────────────────────────────
   chapterStrip:    { marginVertical: 4 },
