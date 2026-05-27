@@ -48,7 +48,7 @@ const JOBBER = [
             ]
           },
           {
-            text: '"Ten years on this card. Ten years. Not one of you knows my name."',
+            text: '"I don't think I have ever seen so many ugly people..."',
             effects: { heat: 5 },
             response: [
               { type: 'narration', text: 'Real heat. Not the worked kind. Boos roll from the front row back.' }
