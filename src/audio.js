@@ -49,6 +49,7 @@ export const THEME_ORDER = ['ALL_AMERICAN', 'DEAD_SERIOUS', 'QUESTION_MARK', 'LA
 let currentSound  = null;
 let currentThemeId = null;
 let muted = false;
+let previewTimer = null;
 
 export async function configureAudio() {
   try {
@@ -109,6 +110,10 @@ export async function stopTheme() {
 }
 
 export async function previewTheme(themeId) {
-  // shorter, non-looping preview for the music select screen
-  return playTheme(themeId, { loop: false, volume: 0.55 });
+  if (previewTimer) { clearTimeout(previewTimer); previewTimer = null; }
+  await playTheme(themeId, { loop: false, volume: 0.55 });
+  previewTimer = setTimeout(async () => {
+    await stopTheme();
+    previewTimer = null;
+  }, 4000);
 }
