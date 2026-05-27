@@ -11,7 +11,7 @@ import {
   legacyToBeats, getChapterRecap
 } from './src/story';
 import { getSceneImage } from './src/sceneImages';
-import { OPPONENTS, playExchanges, resolveClimax, climaxPreview, MID_MATCH_OPTIONS } from './src/opponents';
+import { OPPONENTS, playExchanges, playPostKickoutExchange, resolveClimax, climaxPreview, MID_MATCH_OPTIONS, POST_KICKOUT_OPTIONS } from './src/opponents';
 import { THEMES, THEME_ORDER, configureAudio, playTheme, previewTheme, stopTheme, toggleMute, isMuted } from './src/audio';
 import {
   VICE, SCREENS, ALIGNMENTS, FORMATS,
@@ -535,13 +535,21 @@ function GameScreen({ game, onChoice, onAdvance, onMatchEnd }) {
 // ─── MATCH SCREEN ─────────────────────────────────────────────────────────────
 function MatchScreen({ game, scene, onMatchEnd }) {
   const opponent = (OPPONENTS[game.character] || []).find(o => o.id === scene.opponentId);
-  const [phase, setPhase] = useState('intro'); // intro → exchange(R1,R2) → midMatch → exchange(R3) → climax → resolve → aftermath
+  // intro → exchange(R1,R2) → midMatch → exchange(R3) → climax → resolve
+  //   kickOut success: → postKickout → postExchange → climax → resolve (repeatable)
+  //   otherwise:                                              → aftermath
+  const [phase, setPhase] = useState('intro');
   const [beatIdx, setBeatIdx] = useState(0);
   const [exData, setExData] = useState(null);
   const [exIdx, setExIdx] = useState(0);
   const [midChoice, setMidChoice] = useState(null);
   const [climax, setClimax] = useState(null);
   const [afterIdx, setAfterIdx] = useState(0);
+  // kickout loop — no hard limit, pure push odds each attempt
+  const [kickoutCount, setKickoutCount] = useState(0); // successful kickouts so far
+  const [postKickChoice, setPostKickChoice] = useState(null);
+  const [postExData, setPostExData] = useState(null);
+  const [postBeatIdx, setPostBeatIdx] = useState(0);
 
   useEffect(() => {
     if (phase === 'exchange' && !exData) {
@@ -648,38 +656,46 @@ function MatchScreen({ game, scene, onMatchEnd }) {
 
   // ── CLIMAX PHASE ──────────────────────────────────────────────
   if (phase === 'climax') {
-    const midBonus = midChoice?.bonus || {};
-    const preview = climaxPreview(game, opponent, midBonus);
+    // Latest bonus: post-kick choice on repeat loops, mid-match choice on first pass.
+    const activeBonus  = kickoutCount > 0 ? (postKickChoice?.bonus || {}) : (midChoice?.bonus || {});
+    const activeChoice = kickoutCount > 0 ? postKickChoice : midChoice;
+    // Latest HP: post-exchange data once available, fallback to initial exchange data.
+    const activeHp = postExData ?? exData;
+    const preview = climaxPreview(game, opponent, activeBonus);
     const pct = v => `${Math.round(v * 100)}%`;
     const bonusTag = (kind) => {
-      const b = midBonus[kind];
+      const b = activeBonus[kind];
       if (!b) return '';
       return ` (${b > 0 ? '+' : ''}${Math.round(b * 100)}%)`;
     };
+    // All three options available every time — kickout is pure odds, no charge limit.
+    const stayDownSub = kickoutCount === 0 ? 'TAKE THE L · sympathy crowd' : 'TAKE THE L · you gave it everything';
     const opts = [
-      { key: 'stayDown', label: 'STAY DOWN', color: VICE.textDim,
-        sub: 'TAKE THE L · sympathy crowd' },
+      { key: 'stayDown', label: 'STAY DOWN', color: VICE.textDim, sub: stayDownSub },
       { key: 'kickOut',  label: 'EAT IT',    color: VICE.cyan,
         sub: `${pct(preview.kickOut.odds)}${bonusTag('kickOut')}  ·  PUSH ${preview.kickOut.your} vs DEF ${preview.kickOut.threshold}` },
       { key: 'counter',  label: 'REVERSE',   color: VICE.yellow,
         sub: `${pct(preview.counter.odds)}${bonusTag('counter')}  ·  ${preview.counter.statName} ${preview.counter.your} vs POW ${preview.counter.threshold}` }
     ];
+    const climaxHeaders = ['FINISHER INCOMING', 'HE\'S NOT DONE', 'LAST MAN STANDING'];
+    const header = climaxHeaders[Math.min(kickoutCount, climaxHeaders.length - 1)];
+    const narrative = kickoutCount === 0
+      ? `${opponent.name} sets up the ${opponent.finisher}.`
+      : `${opponent.name} drags you back up. He's going for it again.`;
     return (
       <View>
-        <OpponentHud opponent={opponent} oppHp={exData.oppHp} yourHp={exData.yourHp} yourHpStart={exData.yourHpStart} />
+        <OpponentHud opponent={opponent} oppHp={activeHp?.oppHp} yourHp={activeHp?.yourHp} yourHpStart={activeHp?.yourHpStart} />
         <View style={styles.climaxBox}>
-          <Text style={styles.exchangeRound}>FINISHER INCOMING</Text>
-          <Text style={[styles.dialogueText, { marginBottom: 6 }]}>
-            {opponent.name} sets up the {opponent.finisher}.
-          </Text>
-          {midChoice && (
+          <Text style={styles.exchangeRound}>{header}</Text>
+          <Text style={[styles.dialogueText, { marginBottom: 6 }]}>{narrative}</Text>
+          {activeChoice && (
             <Text style={[styles.mathLine, { marginLeft: 0, marginBottom: 12 }]}>
-              {midChoice.flavor}
+              {activeChoice.flavor}
             </Text>
           )}
           {opts.map(o => (
             <Pressable key={o.key} onPress={() => {
-              setClimax(resolveClimax(game, opponent, o.key, midBonus));
+              setClimax(resolveClimax(game, opponent, o.key, activeBonus));
               setPhase('resolve');
             }} style={[styles.btn, styles.btnWide, { borderColor: o.color }]}>
               <Text style={[styles.btnText, { color: o.color }]}>{o.label}  ·  {o.sub}</Text>
@@ -692,20 +708,23 @@ function MatchScreen({ game, scene, onMatchEnd }) {
 
   // ── RESOLVE PHASE ─────────────────────────────────────────────
   if (phase === 'resolve') {
-    const won = climax.success;
+    // Successful kickout continues the match — repeatable as long as odds hold.
+    const continueAfterKickout = climax.kind === 'kickOut' && climax.success;
+    const won = climax.success && !continueAfterKickout;
+    const activeHp = postExData ?? exData;
     const label =
-      climax.kind === 'stayDown' ? 'YOU STAY DOWN. THREE COUNT. THE CROWD STANDS ANYWAY.'
-      : won && climax.kind === 'kickOut' ? 'YOU EAT IT. KICK OUT AT 2.9. THE ARENA EXPLODES.'
-      : won && climax.kind === 'counter' ? 'REVERSED. YOUR FINISHER LANDS. THREE. ONE-TWO-THREE.'
-      : climax.kind === 'kickOut' ? 'YOU ATE IT. SHOULDERS DOWN. THREE COUNT.'
+      climax.kind === 'stayDown'          ? 'YOU STAY DOWN. THREE COUNT. THE CROWD STANDS ANYWAY.'
+      : continueAfterKickout              ? 'YOU EAT IT. KICK OUT AT 2.9. THE ARENA EXPLODES.'
+      : won && climax.kind === 'counter'  ? 'REVERSED. YOUR FINISHER LANDS. THREE. ONE-TWO-THREE.'
+      : climax.kind === 'kickOut'         ? 'YOU ATE IT. SHOULDERS DOWN. THREE COUNT.'
       : 'CAUGHT MID-COUNTER. PINNED CLEAN. CRUSHED.';
+    const borderColor = continueAfterKickout ? VICE.yellow : won ? VICE.cyan : VICE.border;
+    const headerText  = continueAfterKickout ? '★ KICKED OUT ★' : won ? '★ WIN ★' : 'LOSS';
     return (
       <View>
-        <OpponentHud opponent={opponent} oppHp={exData.oppHp} yourHp={exData.yourHp} yourHpStart={exData.yourHpStart} />
-        <View style={[styles.climaxBox, { borderColor: won ? VICE.cyan : VICE.border }]}>
-          <Text style={[styles.exchangeRound, { color: won ? VICE.cyan : VICE.border }]}>
-            {won ? '★ WIN ★' : 'LOSS'}
-          </Text>
+        <OpponentHud opponent={opponent} oppHp={activeHp?.oppHp} yourHp={activeHp?.yourHp} yourHpStart={activeHp?.yourHpStart} />
+        <View style={[styles.climaxBox, { borderColor }]}>
+          <Text style={[styles.exchangeRound, { color: borderColor }]}>{headerText}</Text>
           <Text style={[styles.dialogueText, { marginBottom: 8 }]}>{label}</Text>
           {climax.kind === 'stayDown' ? (
             <Text style={styles.mathLine}>STAY DOWN · auto-lose by choice</Text>
@@ -716,10 +735,111 @@ function MatchScreen({ game, scene, onMatchEnd }) {
             </Text>
           )}
           <Text style={[styles.mathLine, { marginTop: 6 }]}>
-            HP at climax — YOU {exData.yourHp}/{exData.yourHpStart} · {opponent.name.toUpperCase()} {exData.oppHp}/{opponent.hp}
+            HP at climax — YOU {activeHp?.yourHp}/{activeHp?.yourHpStart} · {opponent.name.toUpperCase()} {activeHp?.oppHp}/{opponent.hp}
           </Text>
-          <Pressable onPress={() => setPhase('aftermath')} style={[styles.btn, styles.btnWide]}>
-            <Text style={styles.btnText}>▶ AFTERMATH</Text>
+          <Pressable onPress={() => {
+            if (continueAfterKickout) {
+              setKickoutCount(kickoutCount + 1);
+              setPostBeatIdx(0);
+              setPhase('postKickout');
+            } else {
+              setPhase('aftermath');
+            }
+          }} style={[styles.btn, styles.btnWide]}>
+            <Text style={styles.btnText}>{continueAfterKickout ? '▶ FIRE BACK' : '▶ AFTERMATH'}</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // ── POST-KICKOUT PHASE ────────────────────────────────────────
+  if (phase === 'postKickout') {
+    const narrativeSets = [
+      [ "He thought it was over.",
+        "You pushed his hands off and got back to your feet.",
+        "One more shot. Make it count." ],
+      [ "Again. The crowd can't believe it.",
+        "He can't believe it either.",
+        "You need to end this. What's your move?" ],
+      [ "This isn't human.",
+        "You're running on nothing.",
+        "He's lining you up one more time. Decide." ],
+    ];
+    const beats = narrativeSets[Math.min(kickoutCount - 1, narrativeSets.length - 1)];
+    if (postBeatIdx < beats.length) {
+      const isLast = postBeatIdx === beats.length - 1;
+      return (
+        <DialogueBox
+          text={beats[postBeatIdx]}
+          onAdvance={() => setPostBeatIdx(postBeatIdx + 1)}
+          autoAdvance={!isLast}
+          advanceHint={isLast ? '▶ DECIDE' : '▶ CONTINUE'}
+        />
+      );
+    }
+    // All narrative beats done — show the post-kickout decision menu.
+    const currentOppHp  = postExData?.oppHp  ?? exData?.oppHp;
+    const currentYourHp = postExData?.yourHp ?? exData?.yourHp;
+    return (
+      <View>
+        <OpponentHud opponent={opponent} oppHp={currentOppHp} yourHp={currentYourHp} yourHpStart={exData?.yourHpStart} />
+        <View style={styles.climaxBox}>
+          <Text style={styles.exchangeRound}>FIRED UP</Text>
+          <Text style={[styles.dialogueText, { marginBottom: 12 }]}>
+            He's stalking you. What's your next move?
+          </Text>
+          {POST_KICKOUT_OPTIONS.map(o => (
+            <Pressable key={o.key} onPress={() => {
+              const currentOpp  = postExData?.oppHp  ?? exData.oppHp;
+              const currentYour = postExData?.yourHp ?? exData.yourHp;
+              setPostExData(playPostKickoutExchange(game, opponent, currentOpp, currentYour));
+              setPostKickChoice(o);
+              setPhase('postExchange');
+            }} style={[styles.btn, styles.btnWide]}>
+              <Text style={styles.btnText}>{o.label}</Text>
+              <Text style={[styles.mathLine, { marginLeft: 0, textAlign: 'center' }]}>{o.tagline}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+    );
+  }
+
+  // ── POST-KICKOUT EXCHANGE PHASE ───────────────────────────────
+  if (phase === 'postExchange') {
+    if (!postExData) return null;
+    const lean    = Math.max(game.pop, game.heat);
+    const oppAtk  = postExData.oppMove.stat === 'pow' ? opponent.stats.pow : opponent.stats.cha;
+    const yourAtk = postExData.yourMove.stat === 'pow' ? lean : (game.pop + game.heat);
+    return (
+      <View>
+        <OpponentHud opponent={opponent} oppHp={postExData.oppHp} yourHp={postExData.yourHp} yourHpStart={postExData.yourHpStart} />
+        <View style={styles.exchangeBox}>
+          <Text style={styles.exchangeRound}>FIRED UP</Text>
+
+          <Text style={styles.exchangeLine}>
+            <Text style={{ color: VICE.border }}>→ {opponent.name.toUpperCase()}: </Text>
+            <Text style={{ color: VICE.text }}>{postExData.oppMove.name}</Text>
+            <Text style={{ color: VICE.textDim }}> [{postExData.oppMove.rarity || 'common'}]</Text>
+            <Text style={{ color: VICE.border }}>  −{postExData.dmgIn} HP</Text>
+          </Text>
+          <Text style={styles.mathLine}>
+            P{postExData.oppMove.power} + ({postExData.oppMove.stat.toUpperCase()} {oppAtk} − PUSH {game.push})/10 = {postExData.dmgIn}
+          </Text>
+
+          <Text style={styles.exchangeLine}>
+            <Text style={{ color: VICE.cyan }}>→ YOU ({game.pop >= game.heat ? 'FACE' : 'HEEL'}): </Text>
+            <Text style={{ color: VICE.text }}>{postExData.yourMove.name}</Text>
+            <Text style={{ color: VICE.textDim }}> [{postExData.yourMove.rarity || 'rare'} · {postExData.yourMove.alignment || 'any'}]</Text>
+            <Text style={{ color: VICE.cyan }}>  −{postExData.dmgOut} HP</Text>
+          </Text>
+          <Text style={styles.mathLine}>
+            P{postExData.yourMove.power} + (LEAN {yourAtk} − DEF {opponent.stats.def})/10 = {postExData.dmgOut}
+          </Text>
+
+          <Pressable onPress={() => setPhase('climax')} style={[styles.btn, styles.btnWide]}>
+            <Text style={styles.btnText}>▶ HE'S SETTING UP AGAIN</Text>
           </Pressable>
         </View>
       </View>

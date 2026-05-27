@@ -284,6 +284,69 @@ export function resolveClimax(game, opponent, kind, midBonus = {}) {
   return null;
 }
 
+// ─── POST-KICKOUT EXCHANGE ───────────────────────────────────────────────────
+
+// One fired-up exchange after a successful kickout. Both sides go hard —
+// opponent draws signature/rare (he wants to finish it), player draws their
+// best rare (momentum just shifted). HP is tracked but doesn't determine
+// outcome; the post-kickout climax roll decides the match.
+export function playPostKickoutExchange(game, opponent, currentOppHp, currentYourHp) {
+  const oppMove  = pickOppSignatureOrRare(opponent.moves);
+  const yourMove = pickBestPlayerMove(game);
+
+  const lean    = Math.max(game.pop, game.heat);
+  const oppAtk  = oppMove.stat === 'pow' ? opponent.stats.pow : opponent.stats.cha;
+  const yourAtk = yourMove.stat === 'pow' ? lean : (game.pop + game.heat);
+
+  const dmgIn  = Math.max(1, Math.round(oppMove.power  + (oppAtk  - game.push)          / 10));
+  const dmgOut = Math.max(1, Math.round(yourMove.power + (yourAtk - opponent.stats.def) / 10));
+
+  return {
+    round: 'FIRED UP',
+    oppMove, yourMove, dmgIn, dmgOut,
+    oppHp:      Math.max(0, currentOppHp  - dmgOut),
+    yourHp:     Math.max(0, currentYourHp - dmgIn),
+    yourHpStart: 100
+  };
+}
+
+function pickBestPlayerMove(game) {
+  const alignment = game.heat >= game.pop ? 'heel' : 'face';
+  const pool = JOBBER_MOVES.rounds.filter(m =>
+    (m.alignment === 'any' || m.alignment === alignment) && m.rarity === 'rare'
+  );
+  return (pool.length ? pool : JOBBER_MOVES.rounds)[Math.floor(Math.random() * (pool.length || JOBBER_MOVES.rounds.length))];
+}
+
+// ─── POST-KICKOUT DECISIONS ──────────────────────────────────────────────────
+// After kicking out the first finisher, one more decision before the final
+// climax. The final climax only offers REVERSE (no second kickout), so all
+// bonuses target counter odds.
+
+export const POST_KICKOUT_OPTIONS = [
+  {
+    key:     'brawlBack',
+    label:   'BRAWL BACK',
+    tagline: 'Trade bombs. Momentum or nothing.',
+    flavor:  "You got up swinging. He didn't expect it.",
+    bonus:   { counter: 0.18 }
+  },
+  {
+    key:     'callShot',
+    label:   'CALL YOUR SHOT',
+    tagline: 'Point to the sky. Set up your finish.',
+    flavor:  'You called it. The crowd heard it. Now you have to hit it.',
+    bonus:   { counter: 0.20 }
+  },
+  {
+    key:     'slowItDown',
+    label:   'SLOW IT DOWN',
+    tagline: 'Grind. Make him earn the second finisher.',
+    flavor:  'You slowed the pace. Ate his follow-up. Made him work.',
+    bonus:   { counter: 0.12 }
+  }
+];
+
 // ─── MID-MATCH OPTIONS ───────────────────────────────────────────────────────
 
 export const MID_MATCH_OPTIONS = [
