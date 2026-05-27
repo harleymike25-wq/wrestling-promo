@@ -325,25 +325,25 @@ function pickBestPlayerMove(game) {
 
 export const POST_KICKOUT_OPTIONS = [
   {
-    key:     'brawlBack',
-    label:   'BRAWL BACK',
-    tagline: 'Trade bombs. Momentum or nothing.',
-    flavor:  "You got up swinging. He didn't expect it.",
-    bonus:   { counter: 0.18 }
-  },
-  {
     key:     'callShot',
     label:   'CALL YOUR SHOT',
-    tagline: 'Point to the sky. Set up your finish.',
+    tagline: 'Commit to the finish. All or nothing.',
     flavor:  'You called it. The crowd heard it. Now you have to hit it.',
-    bonus:   { counter: 0.20 }
+    bonus:   { counter: 0.22, kickOut: -0.05 }
+  },
+  {
+    key:     'brawlBack',
+    label:   'BRAWL BACK',
+    tagline: 'Trade bombs. Keep momentum loose.',
+    flavor:  "You got up swinging. He didn't expect it.",
+    bonus:   { counter: 0.15, kickOut: 0.05 }
   },
   {
     key:     'slowItDown',
     label:   'SLOW IT DOWN',
-    tagline: 'Grind. Make him earn the second finisher.',
+    tagline: 'Grind. Stay alive. Wait for your moment.',
     flavor:  'You slowed the pace. Ate his follow-up. Made him work.',
-    bonus:   { counter: 0.12 }
+    bonus:   { counter: 0.10, kickOut: 0.10 }
   }
 ];
 
