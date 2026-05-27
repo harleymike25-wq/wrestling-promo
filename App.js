@@ -274,7 +274,7 @@ function MusicScreen({ draft, setDraft, onNext, onBack }) {
           >
             <Text style={styles.cardTitle}>{t.label}</Text>
             <Text style={styles.body}>{t.blurb}</Text>
-            <Text style={styles.small}>BPM {t.bpm}{selected ? '   ▶ PREVIEW' : ''}</Text>
+            <Text style={styles.small}>BPM {t.bpm}{selected ? '   ✓ SELECTED' : ''}</Text>
           </Pressable>
         );
       })}
@@ -284,10 +284,6 @@ function MusicScreen({ draft, setDraft, onNext, onBack }) {
 }
 
 function IntroScreen({ game, onEnter }) {
-  useEffect(() => {
-    playTheme(game.music);
-  }, []);
-
   const theme = THEMES[game.music];
 
   return (
