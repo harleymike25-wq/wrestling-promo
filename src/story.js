@@ -24,7 +24,7 @@ import { WIN_THRESHOLDS, ENDING_GATES, GM_TRUST_BONUS } from './constants';
 const JOBBER = [
   // ─── CH 1 — DEBUT (visual novel beats) ─────────────────────────────────
   {
-    id: 'jobber_1a', chapter: 1, part: 'a',
+    id: 'jobber_1a', chapter: 1, part: 'a', musicCue: 'play',
     chapterTitle: 'DEBUT', location: 'The ring · opening line',
     beats: [
       { text: "I can't believe I'm finally back after 10 short years." },
@@ -34,7 +34,6 @@ const JOBBER = [
       { text: "What they don't know is I'm not selling for him." },
       { text: "I'm selling for myself." },
       { type: 'narration', text: 'Your music hits.' },
-      { type: 'narration', text: '[Music starts playing]' },
       { type: 'narration', text: 'You walk out to the blinding lights and a quiet crowd.' },
       {
         type: 'choice',
