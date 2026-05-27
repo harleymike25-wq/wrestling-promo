@@ -304,14 +304,22 @@ function useTypewriter(text, speed = 22) {
   return { displayed, done, skip };
 }
 
-function DialogueBox({ text, label, speaker, onAdvance, advanceHint = '▼' }) {
+function DialogueBox({ text, label, speaker, onAdvance, advanceHint = '▼', autoAdvance = false }) {
   const { displayed, done, skip } = useTypewriter(text);
+
+  useEffect(() => {
+    if (done && autoAdvance) {
+      const t = setTimeout(onAdvance, 900);
+      return () => clearTimeout(t);
+    }
+  }, [done, autoAdvance]);
+
   return (
     <Pressable onPress={done ? onAdvance : skip} style={styles.dialogueBox}>
       {!!speaker && <Text style={styles.dialogueSpeaker}>{speaker}</Text>}
       {!speaker && !!label && <Text style={styles.dialogueLabel}>{label}</Text>}
       <Text style={styles.dialogueText}>{displayed}</Text>
-      {done && <Text style={styles.dialogueHint}>{advanceHint}</Text>}
+      {done && !autoAdvance && <Text style={styles.dialogueHint}>{advanceHint}</Text>}
     </Pressable>
   );
 }
@@ -510,6 +518,7 @@ function GameScreen({ game, onChoice, onAdvance, onMatchEnd }) {
           text={beat?.text}
           speaker={beat?.type === 'speech' ? beat.speaker : null}
           onAdvance={advanceBeat}
+          autoAdvance={!isLastBeat}
           advanceHint={
             isLastBeat && isLastScene  ? '▶ SEE RESULT'
           : isLastBeat && isChapterEnd ? '▶ NEXT CHAPTER'

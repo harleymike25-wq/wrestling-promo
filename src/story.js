@@ -28,7 +28,12 @@ const JOBBER = [
     chapterTitle: 'DEBUT', location: 'The ring · opening line',
     musicCue: 'play',
     beats: [
-      {  text: "After ten years in the indies... there were a lot of nights I didn’t know if I’d ever stand in this ring again. But while this company moved on... I rebuilt myself. I went from being overlooked to undeniable. And if there’s one thing I learned out there — bet on yourself long enough, eventually the whole world has to pay attention." },
+      { text: "After ten years in the indies..." },
+      { text: "...there were a lot of nights I didn’t know if I’d ever stand in this ring again." },
+      { text: "But while this company moved on... I rebuilt myself." },
+      { text: "I went from being overlooked to undeniable." },
+      { text: "And if there’s one thing I learned out there —" },
+      { text: "Bet on yourself long enough, eventually the whole world has to pay attention." },
       { type: 'narration', text: 'GM hands you the mic. "Don\'t make me regret it." Your music hits.' },
       { type: 'narration', text: 'You walk to the ring. Half the crowd is on their phones. The other half doesn\'t know who you are.' },
       { type: 'narration', text: 'You bring the mic to your mouth. The first thing you say decides everything.' },
