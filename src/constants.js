@@ -27,6 +27,7 @@ export const SCREENS = {
   FORMAT:     'format',
   TAG_NAME:   'tagName',
   MUSIC:      'music',
+  INTRO:      'intro',
   GAME:       'game',
   ENDING:     'ending'
 };

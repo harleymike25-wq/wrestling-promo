@@ -54,11 +54,15 @@ export default function App() {
   };
 
   const beginGame = () => {
-    stopTheme(); // kill the music-select preview
+    stopTheme();
     const initial = initialGameState(draft);
     setGame(initial);
     setEnding(null);
-    // theme no longer auto-plays — scenes trigger it via musicCue
+    setScreen(SCREENS.INTRO);
+  };
+
+  const enterGame = () => {
+    stopTheme();
     setScreen(SCREENS.GAME);
   };
 
@@ -106,6 +110,7 @@ export default function App() {
     case SCREENS.TITLE:     body = <TitleScreen onStart={() => go(SCREENS.RING_NAME)} />; break;
     case SCREENS.RING_NAME: body = <RingNameScreen draft={draft} setDraft={setDraft} onNext={() => go(SCREENS.MUSIC)} onBack={() => go(SCREENS.TITLE)} />; break;
     case SCREENS.MUSIC:     body = <MusicScreen draft={draft} setDraft={setDraft} onNext={beginGame} onBack={() => go(SCREENS.RING_NAME)} />; break;
+    case SCREENS.INTRO:     body = <IntroScreen game={game} onEnter={enterGame} />; break;
     case SCREENS.GAME:      body = <GameScreen game={game} onChoice={handleChoice} onAdvance={advanceScene} onMatchEnd={handleMatchEnd} />; break;
     case SCREENS.ENDING:    body = <EndingScreen ending={ending} game={game} onRestart={resetAll} />; break;
     default: body = null;
@@ -274,6 +279,28 @@ function MusicScreen({ draft, setDraft, onNext, onBack }) {
         );
       })}
       <NavRow onBack={onBack} onNext={onNext} canNext={!!draft.music} nextLabel="START MATCH →" />
+    </View>
+  );
+}
+
+function IntroScreen({ game, onEnter }) {
+  useEffect(() => {
+    playTheme(game.music);
+  }, []);
+
+  const theme = THEMES[game.music];
+
+  return (
+    <View style={{ alignItems: 'center', paddingVertical: 32, gap: 20 }}>
+      <Text style={styles.small}>YOUR ENTRANCE</Text>
+      <Text style={styles.h1}>{game.ringName}</Text>
+      <Text style={[styles.h2, { color: VICE.border }]}>♪ {theme?.label}</Text>
+      <Text style={[styles.body, { textAlign: 'center', paddingHorizontal: 16 }]}>
+        The lights drop. Your music hits.{'\n'}The crowd doesn't know what's coming.
+      </Text>
+      <Pressable onPress={onEnter} style={[styles.btn, styles.btnWide, { marginTop: 24 }]}>
+        <Text style={styles.btnText}>ENTER THE ARENA →</Text>
+      </Pressable>
     </View>
   );
 }
