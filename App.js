@@ -550,6 +550,7 @@ function MatchScreen({ game, scene, onMatchEnd }) {
   const [postKickChoice, setPostKickChoice] = useState(null);
   const [postExData, setPostExData] = useState(null);
   const [postBeatIdx, setPostBeatIdx] = useState(0);
+  const [exchangeTurn, setExchangeTurn] = useState('opp'); // 'opp' | 'you'
 
   useEffect(() => {
     if (phase === 'exchange' && !exData) {
@@ -589,24 +590,45 @@ function MatchScreen({ game, scene, onMatchEnd }) {
     const ex = exData.exchanges[exIdx];
     const isLast = exIdx >= exData.exchanges.length - 1;
     const lean = Math.max(game.pop, game.heat);
-    const oppAtk = ex.oppMove.stat === 'pow' ? opponent.stats.pow : opponent.stats.cha;
+    const oppAtk  = ex.oppMove.stat  === 'pow' ? opponent.stats.pow : opponent.stats.cha;
     const yourAtk = ex.yourMove.stat === 'pow' ? lean : (game.pop + game.heat);
+    // Intermediate HP: opp hasn't been hit yet on their turn; you've already taken it by yours.
+    const oppHpMid = ex.oppHp + ex.dmgOut; // opp HP before your move lands
+
+    if (exchangeTurn === 'opp') {
+      return (
+        <View>
+          <OpponentHud opponent={opponent} oppHp={oppHpMid} yourHp={ex.yourHp} yourHpStart={exData.yourHpStart} />
+          <View style={styles.exchangeBox}>
+            <Text style={styles.exchangeRound}>ROUND {ex.round}</Text>
+            <Text style={styles.exchangeLine}>
+              <Text style={{ color: VICE.border }}>→ {opponent.name.toUpperCase()}: </Text>
+              <Text style={{ color: VICE.text }}>{ex.oppMove.name}</Text>
+              <Text style={{ color: VICE.textDim }}> [{ex.oppMove.rarity || 'common'}]</Text>
+              <Text style={{ color: VICE.border }}>  −{ex.dmgIn} HP</Text>
+            </Text>
+            <Text style={styles.mathLine}>
+              P{ex.oppMove.power} + ({ex.oppMove.stat.toUpperCase()} {oppAtk} − PUSH {game.push})/10 = {ex.dmgIn}
+            </Text>
+            <Pressable onPress={() => setExchangeTurn('you')} style={[styles.btn, styles.btnWide]}>
+              <Text style={styles.btnText}>▶ FIRE BACK</Text>
+            </Pressable>
+          </View>
+        </View>
+      );
+    }
+
+    // exchangeTurn === 'you'
+    const nextRound = () => {
+      if (isLast) { setPhase('climax'); }
+      else if (exIdx === 1) { setPhase('midMatch'); }
+      else { setExIdx(exIdx + 1); setExchangeTurn('opp'); }
+    };
     return (
       <View>
         <OpponentHud opponent={opponent} oppHp={ex.oppHp} yourHp={ex.yourHp} yourHpStart={exData.yourHpStart} />
         <View style={styles.exchangeBox}>
           <Text style={styles.exchangeRound}>ROUND {ex.round}</Text>
-
-          <Text style={styles.exchangeLine}>
-            <Text style={{ color: VICE.border }}>→ {opponent.name.toUpperCase()}: </Text>
-            <Text style={{ color: VICE.text }}>{ex.oppMove.name}</Text>
-            <Text style={{ color: VICE.textDim }}> [{ex.oppMove.rarity || 'common'}]</Text>
-            <Text style={{ color: VICE.border }}>  −{ex.dmgIn} HP</Text>
-          </Text>
-          <Text style={styles.mathLine}>
-            P{ex.oppMove.power} + ({ex.oppMove.stat.toUpperCase()} {oppAtk} − PUSH {game.push})/10 = {ex.dmgIn}
-          </Text>
-
           <Text style={styles.exchangeLine}>
             <Text style={{ color: VICE.cyan }}>→ YOU ({game.pop >= game.heat ? 'FACE' : 'HEEL'}): </Text>
             <Text style={{ color: VICE.text }}>{ex.yourMove.name}</Text>
@@ -616,12 +638,7 @@ function MatchScreen({ game, scene, onMatchEnd }) {
           <Text style={styles.mathLine}>
             P{ex.yourMove.power} + (LEAN {yourAtk} − DEF {opponent.stats.def})/10 = {ex.dmgOut}
           </Text>
-
-          <Pressable onPress={() => {
-            if (isLast) setPhase('climax');
-            else if (exIdx === 1) setPhase('midMatch');
-            else setExIdx(exIdx + 1);
-          }} style={styles.btnWide && [styles.btn, styles.btnWide]}>
+          <Pressable onPress={nextRound} style={[styles.btn, styles.btnWide]}>
             <Text style={styles.btnText}>{isLast ? '▶ CLIMAX' : exIdx === 1 ? '▶ THE MOMENT' : '▶ NEXT ROUND'}</Text>
           </Pressable>
         </View>
@@ -643,6 +660,7 @@ function MatchScreen({ game, scene, onMatchEnd }) {
             <Pressable key={o.key} onPress={() => {
               setMidChoice(o);
               setExIdx(2);
+              setExchangeTurn('opp');
               setPhase('exchange');
             }} style={[styles.btn, styles.btnWide]}>
               <Text style={styles.btnText}>{o.label}</Text>
