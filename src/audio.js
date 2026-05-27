@@ -85,7 +85,8 @@ export async function playTheme(themeId, { loop = true, volume = 0.6 } = {}) {
   }
 }
 
-export function isMuted() { return muted; }
+export function isMuted()   { return muted; }
+export function isPlaying() { return currentSound !== null; }
 
 export async function toggleMute() {
   muted = !muted;

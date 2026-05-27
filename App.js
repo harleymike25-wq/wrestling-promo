@@ -12,7 +12,7 @@ import {
 } from './src/story';
 import { getSceneImage } from './src/sceneImages';
 import { OPPONENTS, playExchanges, playPostKickoutExchange, resolveClimax, climaxPreview, MID_MATCH_OPTIONS, POST_KICKOUT_OPTIONS } from './src/opponents';
-import { THEMES, THEME_ORDER, configureAudio, playTheme, previewTheme, stopTheme, toggleMute, isMuted } from './src/audio';
+import { THEMES, THEME_ORDER, configureAudio, playTheme, previewTheme, stopTheme, isPlaying } from './src/audio';
 import {
   VICE, SCREENS, ALIGNMENTS, FORMATS,
   RING_NAME_MAX, CHAPTER_COUNT
@@ -380,10 +380,15 @@ function ChoiceEffects({ effects }) {
 }
 
 function MiniHud({ game }) {
-  const [mute, setMute] = useState(isMuted());
-  const handleMute = async () => {
-    const next = await toggleMute();
-    setMute(next);
+  const [playing, setPlaying] = useState(isPlaying());
+  const handleTheme = async () => {
+    if (isPlaying()) {
+      await stopTheme();
+      setPlaying(false);
+    } else {
+      await playTheme(game.music);
+      setPlaying(true);
+    }
   };
   // Project the player's current ending track from live stats.
   const objective = projectObjective(game);
@@ -396,8 +401,8 @@ function MiniHud({ game }) {
           <MiniStat label="HEAT" value={game.heat} color={VICE.border} />
           <MiniStat label="PUSH" value={game.push} color={VICE.yellow} />
         </View>
-        <Pressable onPress={handleMute} style={styles.muteBtn} hitSlop={8}>
-          <Text style={styles.muteBtnText}>{mute ? '♪̸' : '♪'}</Text>
+        <Pressable onPress={handleTheme} style={styles.muteBtn} hitSlop={8}>
+          <Text style={styles.muteBtnText}>{playing ? '♪̸' : '♪'}</Text>
         </Pressable>
       </View>
       <View style={styles.objectiveBar}>
