@@ -280,7 +280,7 @@ function MusicScreen({ draft, setDraft, onNext, onBack }) {
 
 // ─── FF-style helpers ─────────────────────────────────────────────────────────
 
-function useTypewriter(text, speed = 22) {
+function useTypewriter(text, speed = 40) {
   const [displayed, setDisplayed] = useState('');
   const [done, setDone] = useState(false);
 
