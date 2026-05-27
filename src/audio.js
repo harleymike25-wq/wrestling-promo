@@ -1,14 +1,11 @@
-// audio.js — expo-av wrapper for the 4 entrance themes.
+// audio.js — multi-channel audio engine.
 //
-// The .wav files live in /assets/audio/ and are pre-rendered offline by a
-// one-shot Node + Tone.js script (scripts/render-themes.js, TODO). Until the
-// assets are generated, plays are no-ops and log a notice so the rest of the
-// app continues to work.
+// Channels: 'theme' | 'crowd' | 'sfx'  (add more as needed)
+// Global mute silences all channels but remembers what should be playing,
+// so unmuting resumes everything that was active.
 
 import { Audio } from 'expo-av';
 
-// Asset requires are wrapped so a missing .wav doesn't crash Metro — the
-// fallback is a no-op play (logged) until you run `node scripts/render-themes.mjs`.
 function safeRequire(loader) {
   try { return loader(); } catch { return null; }
 }
@@ -46,10 +43,78 @@ export const THEMES = {
 
 export const THEME_ORDER = ['ALL_AMERICAN', 'DEAD_SERIOUS', 'QUESTION_MARK', 'LAST_LAUGH'];
 
-let currentSound  = null;
-let currentThemeId = null;
+// ─── Channel state ────────────────────────────────────────────────────────────
+
+// What *should* be playing on each channel (intent, survives mute).
+const pending  = {};   // channel → { asset, loop, volume }
+// What IS currently playing.
+const playing  = {};   // channel → expo-av Sound object
+
 let muted = false;
 let previewTimer = null;
+
+// ─── Internal ─────────────────────────────────────────────────────────────────
+
+async function _start(channel) {
+  const intent = pending[channel];
+  if (!intent || !intent.asset) {
+    if (intent) console.log(`[audio] ${channel} would play (asset not bundled yet)`);
+    return;
+  }
+  try {
+    const { sound } = await Audio.Sound.createAsync(intent.asset, {
+      isLooping: intent.loop,
+      volume:    intent.volume,
+      shouldPlay: true
+    });
+    playing[channel] = sound;
+  } catch (e) {
+    console.warn(`[audio] ${channel} play failed:`, e?.message);
+  }
+}
+
+async function _stop(channel) {
+  const s = playing[channel];
+  if (!s) return;
+  try {
+    await s.stopAsync();
+    await s.unloadAsync();
+  } catch {}
+  delete playing[channel];
+}
+
+// ─── Public channel API ───────────────────────────────────────────────────────
+
+export async function playChannel(channel, asset, { loop = false, volume = 0.7 } = {}) {
+  await _stop(channel);
+  pending[channel] = { asset, loop, volume };
+  if (!muted) await _start(channel);
+}
+
+export async function stopChannel(channel) {
+  delete pending[channel];
+  await _stop(channel);
+}
+
+export function isChannelPlaying(channel) {
+  return !!playing[channel];
+}
+
+// ─── Global mute ─────────────────────────────────────────────────────────────
+
+export function isMuted() { return muted; }
+
+export async function toggleMute() {
+  muted = !muted;
+  if (muted) {
+    for (const ch of Object.keys(playing)) await _stop(ch);
+  } else {
+    for (const ch of Object.keys(pending)) await _start(ch);
+  }
+  return muted;
+}
+
+// ─── Theme helpers ────────────────────────────────────────────────────────────
 
 export async function configureAudio() {
   try {
@@ -64,52 +129,14 @@ export async function configureAudio() {
 }
 
 export async function playTheme(themeId, { loop = true, volume = 0.6 } = {}) {
-  await stopTheme();
   const theme = THEMES[themeId];
   if (!theme) return;
-  currentThemeId = themeId;
-  if (muted) return;
-  if (!theme.asset) {
-    console.log(`[audio] ${themeId} would play (asset not bundled yet)`);
-    return;
-  }
-  try {
-    const { sound } = await Audio.Sound.createAsync(theme.asset, {
-      isLooping: loop,
-      volume,
-      shouldPlay: true
-    });
-    currentSound = sound;
-  } catch (e) {
-    console.warn(`[audio] play ${themeId} failed:`, e?.message);
-  }
-}
-
-export function isMuted()   { return muted; }
-export function isPlaying() { return currentSound !== null; }
-
-export async function toggleMute() {
-  muted = !muted;
-  if (muted) {
-    await stopTheme();
-  } else if (currentThemeId) {
-    // resume what was playing
-    const t = currentThemeId;
-    currentThemeId = null; // reset so playTheme treats this as fresh
-    await playTheme(t);
-  }
-  return muted;
+  await playChannel('theme', theme.asset, { loop, volume });
 }
 
 export async function stopTheme() {
   if (previewTimer) { clearTimeout(previewTimer); previewTimer = null; }
-  currentThemeId = null;
-  if (!currentSound) return;
-  try {
-    await currentSound.stopAsync();
-    await currentSound.unloadAsync();
-  } catch {}
-  currentSound = null;
+  await stopChannel('theme');
 }
 
 export async function previewTheme(themeId) {
