@@ -33,9 +33,9 @@ const JOBBER = [
       { text: "But now I'm back — for Johnny Bigdeal's retirement tour." },
       { text: "What they don't know is I'm not selling for him." },
       { text: "I'm selling for myself." },
-      { type: 'narration', text: 'GM hands you the mic. "Don\'t make me regret it." Your music hits.' },
-      { type: 'narration', text: 'You walk to the ring. Half the crowd is on their phones. The other half doesn\'t know who you are.' },
-      { type: 'narration', text: 'You bring the mic to your mouth. The first thing you say decides everything.' },
+      { type: 'narration', text: 'Your music hits.' },
+      { type: 'narration', text: '[Music starts playing]' },
+      { type: 'narration', text: 'You walk out to the blinding lights and a quiet crowd.' },
       {
         type: 'choice',
         options: [
