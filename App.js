@@ -96,7 +96,13 @@ export default function App() {
   if (!fontsReady) {
     return (
       <View style={styles.shell}>
-        <Text style={[styles.h1, { color: VICE.cyan }]}>LOADING…</Text>
+        <View style={styles.center}>
+          <Text style={styles.titleSmall}>★ APEX WRESTLING FEDERATION ★</Text>
+          <Text style={[styles.titleBig, { fontSize: 48 }]}>AWF</Text>
+          <Text style={styles.titleSub}>WRESTLING{' '}PROMOS</Text>
+          <View style={{ height: 28 }} />
+          <Text style={[styles.h1, { color: VICE.cyan, fontSize: 18 }]}>LOADING…</Text>
+        </View>
       </View>
     );
   }
@@ -132,7 +138,11 @@ function TitleScreen({ onStart }) {
       <Text style={styles.titleSmall}>★ APEX WRESTLING FEDERATION ★</Text>
       <Text style={styles.titleBig}>AWF</Text>
       <Text style={styles.titleSub}>WRESTLING{'\n'}PROMOS</Text>
-      <View style={{ height: 24 }} />
+      <View style={{ height: 20 }} />
+      <Text style={[styles.body, { textAlign: 'center', maxWidth: 320, lineHeight: 20 }]}>
+        Build your wrestler. Cut promos. Work matches. Climb the card.{' '}A text-based pro-wrestling career game set in the neon-soaked world of the AWF.
+      </Text>
+      <View style={{ height: 20 }} />
       <Text style={styles.muted}>v1</Text>
       <View style={{ height: 40 }} />
       <Btn onPress={onStart} label="▶ PRESS START" wide />
