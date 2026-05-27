@@ -960,7 +960,7 @@ const styles = StyleSheet.create({
   diffPip: { width: 12, height: 12, marginRight: 3 },
 
   input: {
-    fontFamily: PIXEL, fontSize: 14, color: VICE.yellow,
+    fontFamily: PIXEL, fontSize: 16, color: VICE.yellow,
     borderWidth: 3, borderColor: VICE.border, padding: 12,
     backgroundColor: VICE.bgLight, marginBottom: 12, letterSpacing: 3, textAlign: 'center'
   },
