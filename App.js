@@ -53,8 +53,8 @@ export default function App() {
     setScreen(SCREENS.TITLE);
   };
 
-  const beginGame = () => {
-    stopTheme();
+  const beginGame = async () => {
+    await stopTheme();
     const initial = initialGameState(draft);
     setGame(initial);
     setEnding(null);
