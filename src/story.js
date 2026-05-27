@@ -26,7 +26,6 @@ const JOBBER = [
   {
     id: 'jobber_1a', chapter: 1, part: 'a',
     chapterTitle: 'DEBUT', location: 'The ring · opening line',
-    musicCue: 'play',
     beats: [
       { text: "After ten years in the indies..." },
       { text: "...there were a lot of nights I didn’t know if I’d ever stand in this ring again." },
