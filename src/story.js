@@ -27,7 +27,7 @@ const JOBBER = [
     id: 'jobber_1a', chapter: 1, part: 'a', musicCue: 'play',
     chapterTitle: 'DEBUT', location: 'The ring · opening line',
     beats: [
-      { text: "I can't believe I'm finally back after 10 short years." },
+      { text: "I can't believe I'm finally back after 10 years." },
       { text: "All I had to do was become King of the Indies..." },
       { text: "...endure the barbed wire tables, the light tubes, the thumbtack death matches." },
       { text: "But now I'm back — for Johnny Bigdeal's retirement tour." },
