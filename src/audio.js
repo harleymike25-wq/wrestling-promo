@@ -101,11 +101,11 @@ export async function toggleMute() {
 
 export async function stopTheme() {
   if (!currentSound) return;
-  try {
-    await currentSound.stopAsync();
-    await currentSound.unloadAsync();
-  } catch {}
+  const s = currentSound;
   currentSound = null;
+  currentThemeId = null;
+  try { await s.stopAsync(); } catch {}
+  try { await s.unloadAsync(); } catch {}
 }
 
 export async function previewTheme(themeId) {
