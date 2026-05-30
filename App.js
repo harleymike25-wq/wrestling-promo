@@ -53,12 +53,11 @@ export default function App() {
     setScreen(SCREENS.TITLE);
   };
 
-  const beginGame = () => {
-    stopTheme(); // kill the music-select preview
+  const beginGame = async () => {
+    await stopTheme(); // kill the music-select preview before scene loads
     const initial = initialGameState(draft);
     setGame(initial);
     setEnding(null);
-    // theme no longer auto-plays — scenes trigger it via musicCue
     setScreen(SCREENS.GAME);
   };
 
