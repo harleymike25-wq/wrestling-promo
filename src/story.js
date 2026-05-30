@@ -24,7 +24,7 @@ import { WIN_THRESHOLDS, ENDING_GATES, GM_TRUST_BONUS } from './constants';
 const JOBBER = [
   // ─── CH 1 — DEBUT (visual novel beats) ─────────────────────────────────
   {
-    id: 'jobber_1a', chapter: 1, part: 'a', musicCue: 'play',
+    id: 'jobber_1a', chapter: 1, part: 'a',
     chapterTitle: 'DEBUT', location: 'The ring · opening line',
     beats: [
       { text: "I can't believe I'm finally back after 10 years." },
