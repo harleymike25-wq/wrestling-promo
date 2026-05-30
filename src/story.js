@@ -29,7 +29,7 @@ const JOBBER = [
     beats: [
       { text: "I can't believe I'm finally back after 10 years." },
       { text: "All I had to do was become King of the Indies..." },
-      { text: "...endure the barbed wire tables, the light tubes, the thumbtack death matches." },
+      { text: "...bled in front of 50 people at the legion for pocket change." },
       { text: "But now I'm back — for Johnny Bigdeal's retirement tour." },
       { text: "What they don't know is I'm not selling for him." },
       { text: "I'm selling for myself." },
