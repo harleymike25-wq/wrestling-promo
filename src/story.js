@@ -34,7 +34,6 @@ const JOBBER = [
       { text: "What they don't know is I'm not selling for him." },
       { text: "I'm selling for myself." },
       { type: 'narration', text: 'Your music hits.' },
-      { type: 'narration', text: 'You walk out to the blinding lights and a quiet crowd.' },
       {
         type: 'choice',
         options: [
